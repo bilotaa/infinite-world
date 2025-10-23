@@ -8,8 +8,19 @@
         <link rel="stylesheet" href="./sources/Homepage/homepage.css">
     </head>
     <body>
+        <!-- Loading Screen (shown first) -->
+        <div class="loading-overlay" id="loading-overlay">
+            <h1 class="loading-title">Slow Roads</h1>
+            <div class="loading-text">Loading Assets...</div>
+            <div class="progress-container">
+                <div class="progress-fill" id="loading-progress-fill"></div>
+            </div>
+            <div class="loading-percentage" id="loading-percentage">0%</div>
+            <div class="loading-detail" id="loading-detail">Initializing...</div>
+        </div>
+
         <!-- Homepage Overlay -->
-        <div class="homepage-overlay">
+        <div class="homepage-overlay" style="display: none;">
             <h1 class="homepage-title">Slow Roads</h1>
             <div class="username-container">
                 <input type="text" id="username-input" placeholder="Enter Username" maxlength="20" autocomplete="off">
