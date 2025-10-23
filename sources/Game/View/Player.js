@@ -5,9 +5,9 @@ import View from '@/View/View.js'
 import Debug from '@/Debug/Debug.js'
 import State from '@/State/State.js'
 
-import { createCybertruckModel } from '@/Homepage/CarModels/Cybertruck.js'
-import { createSupraMK4Model } from '@/Homepage/CarModels/SupraMK4.js'
-import { createLamborghiniModel } from '@/Homepage/CarModels/Lamborghini.js'
+import { createCybertruckModel } from '../../Homepage/CarModels/Cybertruck.js'
+import { createSupraMK4Model } from '../../Homepage/CarModels/SupraMK4.js'
+import { createLamborghiniModel } from '../../Homepage/CarModels/Lamborghini.js'
 
 export default class Player
 {
