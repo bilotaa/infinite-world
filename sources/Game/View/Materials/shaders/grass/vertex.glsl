@@ -33,6 +33,32 @@ varying vec3 vColor;
 #include ../partials/getGrassAttenuation.glsl;
 #include ../partials/getRotatePivot2d.glsl;
 
+// Road configuration - matches terrain shader
+const float ROAD_CENTER_X = 0.0;
+const float ROAD_HALF_WIDTH = 4.0;
+const float ROAD_SMOOTH_WIDTH = 4.0;
+
+float smoothStepCustom(float edge0, float edge1, float x) {
+    float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+float getRoadInfluence(float x) {
+    float distanceFromRoadCenter = abs(x - ROAD_CENTER_X);
+    float halfRoadWidth = ROAD_HALF_WIDTH;
+    float totalWidth = halfRoadWidth + ROAD_SMOOTH_WIDTH;
+    
+    if (distanceFromRoadCenter < halfRoadWidth) {
+        return 1.0;
+    } else if (distanceFromRoadCenter < totalWidth) {
+        float blendDistance = distanceFromRoadCenter - halfRoadWidth;
+        float blendFactor = 1.0 - (blendDistance / ROAD_SMOOTH_WIDTH);
+        return smoothStepCustom(0.0, 1.0, blendFactor);
+    }
+    
+    return 0.0;
+}
+
 void main()
 {
     // Recalculate center and keep around player
@@ -80,7 +106,12 @@ void main()
     // Attenuation
     float distanceScale = getGrassAttenuation(modelCenter.xz);
     float slopeScale = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
-    float scale = distanceScale * slopeScale;
+    
+    // Road attenuation - hide grass on road
+    float roadInfluence = getRoadInfluence(modelCenter.x);
+    float roadScale = 1.0 - roadInfluence;
+    
+    float scale = distanceScale * slopeScale * roadScale;
     modelPosition.xyz = mix(modelCenter.xyz, modelPosition.xyz, scale);
 
     // Tipness
