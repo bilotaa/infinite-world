@@ -32,34 +32,40 @@ export default class Player
         // Create Tesla Cybertruck using Three.js geometries
         this.helper = new THREE.Group()
         
-        // Stainless steel material for Cybertruck body
+        // Brighter stainless steel material for Cybertruck body
         const bodyMaterial = new THREE.MeshStandardMaterial({
-            color: 0xc0c0c0, // Silver/stainless steel
-            metalness: 0.9,
-            roughness: 0.3,
-            emissive: 0x222222,
+            color: 0xe8e8e8, // Brighter silver
+            metalness: 0.85,
+            roughness: 0.2,
+            emissive: 0x666666, // Increased emissive for visibility
+            emissiveIntensity: 0.3
+        })
+        
+        // Dark gray material for windows (not pure black)
+        const windowMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2a2a2a,
+            metalness: 0.3,
+            roughness: 0.6,
+            emissive: 0x0a0a0a,
+            emissiveIntensity: 0.2
+        })
+        
+        // Lighter tire material
+        const tireMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333333,
+            metalness: 0.3,
+            roughness: 0.8,
+            emissive: 0x111111,
             emissiveIntensity: 0.1
         })
         
-        // Black material for windows and details
-        const windowMaterial = new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            metalness: 0.1,
-            roughness: 0.8
-        })
-        
-        // Tire material
-        const tireMaterial = new THREE.MeshStandardMaterial({
-            color: 0x1a1a1a,
-            metalness: 0.2,
-            roughness: 0.9
-        })
-        
-        // Wheel rim material
+        // Brighter wheel rim material
         const rimMaterial = new THREE.MeshStandardMaterial({
-            color: 0x888888,
-            metalness: 0.8,
-            roughness: 0.4
+            color: 0xaaaaaa,
+            metalness: 0.9,
+            roughness: 0.3,
+            emissive: 0x444444,
+            emissiveIntensity: 0.2
         })
         
         // TRUCK BED (back part)
@@ -149,9 +155,9 @@ export default class Player
         
         // HEADLIGHTS (glowing strips for Cybertruck look)
         const headlightMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffaa,
-            emissive: 0xffff88,
-            emissiveIntensity: 0.8
+            color: 0xffffee,
+            emissive: 0xffffaa,
+            emissiveIntensity: 1.2
         })
         
         const headlightLeft = new THREE.Mesh(
@@ -167,9 +173,9 @@ export default class Player
         
         // TAILLIGHTS (red strips)
         const taillightMaterial = new THREE.MeshStandardMaterial({
-            color: 0xff0000,
+            color: 0xff2222,
             emissive: 0xff0000,
-            emissiveIntensity: 0.5
+            emissiveIntensity: 0.8
         })
         
         const taillightLeft = new THREE.Mesh(
@@ -188,6 +194,10 @@ export default class Player
         
         // Add truck to group
         this.group.add(this.helper)
+        
+        // Store previous rotation and current tilt for smooth animation
+        this.previousRotation = 0
+        this.currentTilt = 0
         
         console.log('Tesla Cybertruck created successfully')
     }
@@ -212,9 +222,37 @@ export default class Player
             playerState.position.current[2]
         )
         
-        // Helper - only update rotation if model is loaded
+        // Helper - update rotation with smooth tilt effect
         if (this.helper) {
+            // Initialize previousRotation on first frame
+            if (this.previousRotation === 0) {
+                this.previousRotation = playerState.rotation
+            }
+            
+            // Calculate rotation difference and normalize to -π to π range
+            let rotationDiff = playerState.rotation - this.previousRotation
+            
+            // Handle angle wrapping (when going from 2π to 0 or vice versa)
+            if (rotationDiff > Math.PI) {
+                rotationDiff -= Math.PI * 2
+            } else if (rotationDiff < -Math.PI) {
+                rotationDiff += Math.PI * 2
+            }
+            
+            // Apply main rotation
             this.helper.rotation.y = playerState.rotation
+            
+            // Calculate target tilt based on turn rate (reduced sensitivity)
+            const targetTilt = Math.max(-0.05, Math.min(0.05, -rotationDiff * 3))
+            
+            // Smoothly interpolate current tilt towards target (lerp)
+            this.currentTilt += (targetTilt - this.currentTilt) * 0.15
+            
+            // Apply smooth tilt
+            this.helper.rotation.z = this.currentTilt
+            
+            // Store current rotation for next frame
+            this.previousRotation = playerState.rotation
         }
     }
 }
