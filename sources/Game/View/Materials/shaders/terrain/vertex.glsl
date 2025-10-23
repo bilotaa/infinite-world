@@ -22,12 +22,12 @@ varying vec3 vColor;
 // Road visual constants
 const vec3 ROAD_COLOR = vec3(0.35, 0.35, 0.35);        // Medium grey
 const vec3 LINE_COLOR = vec3(1.0, 1.0, 1.0);           // White
-const float ROAD_HALF_WIDTH = 4.0;                      // Half width of road
-const float CENTER_LINE_WIDTH = 0.15;
-const float EDGE_LINE_WIDTH = 0.12;
+const float ROAD_HALF_WIDTH = 8.0;                      // Half width of road (doubled)
+const float CENTER_LINE_WIDTH = 0.25;                   // Wider for sharper look
+const float EDGE_LINE_WIDTH = 0.2;                      // Wider for sharper look
 const float DASH_LENGTH = 3.0;
 const float DASH_GAP = 2.0;
-const float EDGE_LINE_POSITION = 3.8;                   // Distance from center
+const float EDGE_LINE_POSITION = 7.5;                   // Distance from center (adjusted for wider road)
 const float ROAD_CENTER_X = 0.0;
 const float ROAD_SMOOTH_WIDTH = 4.0;
 
