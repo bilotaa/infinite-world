@@ -10,15 +10,22 @@
     height: 100vh;
     z-index: 1000;
 
-    /* Background image from Pinterest reference */
-    background-image: url('https://i.pinimg.com/originals/9e/0e/3e/9e0e3e88e5f5b8e6e3e1e3e3e3e3e3e3.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    /* Scenic terrain gradient background (fallback and primary) */
+    background: linear-gradient(to bottom, 
+        #87CEEB 0%,      /* Sky blue at top */
+        #B0D9E8 20%,     /* Lighter blue */
+        #C8D5B9 40%,     /* Light green hills */
+        #9DB380 60%,     /* Mid green hills */
+        #8B9A7E 80%,     /* Dark green hills */
+        #7A8870 100%     /* Darkest green at bottom */
+    );
 
-    /* Fallback gradient if image fails to load */
-    background-color: #87CEEB;
-    background-image: linear-gradient(to bottom, #87CEEB 0%, #C8D5B9 50%, #8B9A7E 100%);
+    /* Optional: Add background image if available
+       background-image: url('path-to-scenic-image.jpg');
+       background-size: cover;
+       background-position: center;
+       background-repeat: no-repeat;
+    */
 
     display: flex;
     flex-direction: column;
