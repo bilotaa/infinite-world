@@ -33,7 +33,7 @@ export default class Player
         this.helper = new THREE.Group()
         
         // Brighter stainless steel material for Cybertruck body
-        const bodyMaterial = new THREE.MeshStandardMaterial({
+        this.bodyMaterial = new THREE.MeshStandardMaterial({
             color: 0xe8e8e8, // Brighter silver
             metalness: 0.85,
             roughness: 0.2,
@@ -75,7 +75,7 @@ export default class Player
         // TRUCK BED (back part)
         const bed = new THREE.Mesh(
             new THREE.BoxGeometry(2.5, 1.2, 3),
-            bodyMaterial
+            this.bodyMaterial
         )
         bed.position.set(0, 0.6, 0.5)
         this.bodyGroup.add(bed)
@@ -83,7 +83,7 @@ export default class Player
         // CABIN (front part) - lower part
         const cabinLower = new THREE.Mesh(
             new THREE.BoxGeometry(2.5, 1.0, 2),
-            bodyMaterial
+            this.bodyMaterial
         )
         cabinLower.position.set(0, 0.5, -1.5)
         this.bodyGroup.add(cabinLower)
@@ -91,7 +91,7 @@ export default class Player
         // CABIN - upper part (slanted roof)
         const cabinUpper = new THREE.Mesh(
             new THREE.BoxGeometry(2.3, 0.8, 1.5),
-            bodyMaterial
+            this.bodyMaterial
         )
         cabinUpper.position.set(0, 1.3, -1.3)
         cabinUpper.rotation.x = -0.15 // Slight angle for Cybertruck look
@@ -121,7 +121,7 @@ export default class Player
         // FRONT HOOD/NOSE
         const hood = new THREE.Mesh(
             new THREE.BoxGeometry(2.3, 0.6, 0.8),
-            bodyMaterial
+            this.bodyMaterial
         )
         hood.position.set(0, 0.5, -2.8)
         hood.rotation.x = 0.1
@@ -161,7 +161,12 @@ export default class Player
             wheelGroup.add(rim)
             
             this.helper.add(wheelGroup)
-            this.wheels.push(wheelGroup)
+            this.wheels.push({
+                group: wheelGroup,
+                tire: tire,
+                rim: rim,
+                baseY: wheelRadius
+            })
         })
         
         // HEADLIGHTS (glowing strips for Cybertruck look)
@@ -200,6 +205,27 @@ export default class Player
         taillightRight.position.set(1.0, 0.9, 2.0)
         this.bodyGroup.add(taillightRight)
         
+        // EXHAUST FLAMES (for turbo boost effect)
+        this.exhaustMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff6600,
+            emissive: 0xff4400,
+            emissiveIntensity: 0,
+            transparent: true,
+            opacity: 0
+        })
+        
+        const exhaustLeft = new THREE.Mesh(
+            new THREE.ConeGeometry(0.15, 0.5, 8),
+            this.exhaustMaterial
+        )
+        exhaustLeft.position.set(-0.8, 0.3, 2.2)
+        exhaustLeft.rotation.x = Math.PI / 2
+        this.bodyGroup.add(exhaustLeft)
+        
+        const exhaustRight = exhaustLeft.clone()
+        exhaustRight.position.set(0.8, 0.3, 2.2)
+        this.bodyGroup.add(exhaustRight)
+        
         // Position entire truck above ground
         this.helper.position.y = 0.2
         
@@ -214,9 +240,19 @@ export default class Player
         this.bodyRoll = 0                  // Side-to-side tilt
         this.bodyPitch = 0                 // Front/back tilt
         this.previousSpeed = 0
-        this.previousPosition = { x: 0, z: 0 }
+        this.previousPosition = { x: 0, y: 0, z: 0 }
         
-        console.log('Tesla Cybertruck created successfully - Premium Edition')
+        // Advanced visual effects
+        this.tireDeformation = 0           // Tire squash during hard accel/brake
+        this.gForceVisual = { x: 0, z: 0 } // Smoothed G-force for visuals
+        
+        // HUD elements cache
+        this.speedElement = document.getElementById('speed')
+        this.gearElement = document.getElementById('gear')
+        this.turboElement = document.getElementById('turbo')
+        this.rpmElement = document.getElementById('rpm')
+        
+        console.log('Tesla Cybertruck created successfully - Ultra Premium Edition')
     }
 
     setDebug()
@@ -240,7 +276,37 @@ export default class Player
             playerState.position.current[2]
         )
         
-        // Helper - advanced car mechanics
+        // ============= UPDATE HUD DISPLAY =============
+        if(this.speedElement) {
+            const speedKmH = playerState.getSpeedKmH()
+            this.speedElement.textContent = speedKmH
+            
+            // Color change based on speed
+            if(speedKmH > 120) {
+                this.speedElement.style.color = '#ff0066' // Red at high speed
+            } else if(speedKmH > 80) {
+                this.speedElement.style.color = '#ffaa00' // Orange at medium-high
+            } else {
+                this.speedElement.style.color = '#00ffff' // Cyan at normal
+            }
+        }
+        
+        if(this.gearElement) {
+            const gear = playerState.currentGear || 1
+            this.gearElement.textContent = gear === 0 ? 'R' : gear
+        }
+        
+        if(this.turboElement) {
+            const turboPercent = ((playerState.turboCharge || 0) * 100).toFixed(0)
+            this.turboElement.style.width = turboPercent + '%'
+        }
+        
+        if(this.rpmElement) {
+            const rpm = Math.round(playerState.engineRPM || 1000)
+            this.rpmElement.textContent = rpm + ' RPM'
+        }
+        
+        // Helper - ultra-advanced car mechanics
         if (this.helper) {
             // Initialize previousRotation on first frame
             if (this.previousRotation === 0) {
@@ -264,87 +330,133 @@ export default class Player
             const speed = playerState.speed || 0
             const acceleration = (speed - this.previousSpeed) / (time.delta || 0.016)
             
+            // Smooth G-force for visual effects
+            const rawGForceX = playerState.gForce ? playerState.gForce.x : 0
+            const rawGForceZ = playerState.gForce ? playerState.gForce.z : 0
+            this.gForceVisual.x += (rawGForceX - this.gForceVisual.x) * 0.15
+            this.gForceVisual.z += (rawGForceZ - this.gForceVisual.z) * 0.15
+            
+            // ============= TURBO BOOST VISUAL EFFECTS =============
+            const turboActive = playerState.turboActive || false
+            const turboCharge = playerState.turboCharge || 0
+            
+            if(turboActive && turboCharge > 0.3) {
+                // Body glow during turbo
+                this.bodyMaterial.emissiveIntensity = 0.3 + turboCharge * 0.4
+                this.bodyMaterial.emissive.setHex(0x6666ff + Math.floor(turboCharge * 0x4400))
+                
+                // Exhaust flames
+                this.exhaustMaterial.emissiveIntensity = turboCharge * 3
+                this.exhaustMaterial.opacity = turboCharge * 0.8
+            } else {
+                // Normal state
+                this.bodyMaterial.emissiveIntensity = 0.3
+                this.bodyMaterial.emissive.setHex(0x666666)
+                this.exhaustMaterial.emissiveIntensity *= 0.9
+                this.exhaustMaterial.opacity *= 0.9
+            }
+            
             // ============= WHEEL ROTATION ANIMATION =============
             // Rotate wheels based on speed (realistic rolling)
             const distanceTraveled = speed * time.delta
-            const wheelCircumference = Math.PI * 1.0 // 2 * π * radius
+            const wheelCircumference = Math.PI * 1.0
             this.wheelRotation += (distanceTraveled / wheelCircumference) * Math.PI * 2
             
-            // Apply rotation to all wheels
+            // Tire deformation during hard acceleration/braking
+            const targetDeformation = Math.abs(acceleration) * 0.008
+            this.tireDeformation += (targetDeformation - this.tireDeformation) * 0.2
+            
+            // Apply rotation and effects to all wheels
             this.wheels.forEach((wheel, index) => {
-                // Forward/backward rotation
-                wheel.rotation.x = this.wheelRotation
+                // Forward/backward rotation with motion blur effect
+                wheel.group.rotation.x = this.wheelRotation
                 
-                // Add slight wobble during drift
+                // Speed-based blur (scale wheels slightly to simulate motion blur)
+                const blurAmount = 1 + Math.min(0.15, speed / 150)
+                wheel.tire.scale.set(1, blurAmount, 1)
+                wheel.rim.scale.set(1, blurAmount, 1)
+                
+                // Tire deformation (squash)
+                const isRear = index >= 2
+                const deformAmount = isRear ? this.tireDeformation * 1.5 : this.tireDeformation
+                wheel.group.position.y = wheel.baseY - deformAmount
+                
+                // Drift wobble
                 if (playerState.isDrifting) {
-                    const wobble = Math.sin(this.wheelRotation * 3) * 0.05
-                    wheel.rotation.z = wobble
+                    const wobble = Math.sin(this.wheelRotation * 4 + index) * 0.06
+                    wheel.group.rotation.z = wobble
                 } else {
-                    wheel.rotation.z *= 0.9 // Smooth back to zero
+                    wheel.group.rotation.z *= 0.88
                 }
             })
             
-            // ============= BODY ROLL (Weight Transfer) =============
-            // Lean into turns
-            const targetRoll = -rotationDiff * speed * 0.15
-            this.bodyRoll += (targetRoll - this.bodyRoll) * 0.12
+            // ============= ADVANCED BODY ROLL (G-Force Based) =============
+            // Combine turn rate and lateral G-force for ultra-realistic roll
+            const gForceRoll = this.gForceVisual.x * 0.08
+            const turnRoll = -rotationDiff * speed * 0.12
+            const targetRoll = gForceRoll + turnRoll
             
-            // Limit maximum roll
-            this.bodyRoll = Math.max(-0.12, Math.min(0.12, this.bodyRoll))
+            this.bodyRoll += (targetRoll - this.bodyRoll) * 0.15
+            this.bodyRoll = Math.max(-0.15, Math.min(0.15, this.bodyRoll))
             
-            // ============= BODY PITCH (Acceleration/Braking) =============
-            // Nose dips when braking, lifts when accelerating
-            const targetPitch = -acceleration * 0.015
-            this.bodyPitch += (targetPitch - this.bodyPitch) * 0.1
+            // ============= ADVANCED BODY PITCH (Acceleration G-Force) =============
+            const gForcePitch = -this.gForceVisual.z * 0.1
+            const accelPitch = -acceleration * 0.018
+            const targetPitch = gForcePitch + accelPitch
             
-            // Limit maximum pitch
-            this.bodyPitch = Math.max(-0.08, Math.min(0.08, this.bodyPitch))
+            this.bodyPitch += (targetPitch - this.bodyPitch) * 0.12
+            this.bodyPitch = Math.max(-0.12, Math.min(0.10, this.bodyPitch))
             
-            // ============= SUSPENSION BOUNCE =============
-            // Simulate suspension compression based on terrain and movement
+            // ============= ADVANCED SUSPENSION WITH DAMPING =============
             const verticalAccel = (playerState.position.current[1] - this.previousPosition.y) / (time.delta || 0.016)
-            const targetCompression = Math.abs(verticalAccel) * 0.02 + Math.abs(acceleration) * 0.01
+            const speedBump = Math.abs(verticalAccel) * 0.025
+            const accelBump = Math.abs(acceleration) * 0.012
+            const gForceBump = (Math.abs(this.gForceVisual.x) + Math.abs(this.gForceVisual.z)) * 0.02
             
-            this.suspensionCompression += (targetCompression - this.suspensionCompression) * 0.2
-            this.suspensionCompression = Math.min(0.15, this.suspensionCompression)
+            const targetCompression = speedBump + accelBump + gForceBump
             
-            // Natural suspension oscillation (bouncy)
-            this.suspensionCompression *= 0.92
+            // Spring-damper system
+            this.suspensionCompression += (targetCompression - this.suspensionCompression) * 0.25
+            this.suspensionCompression = Math.min(0.2, this.suspensionCompression)
             
-            // Apply suspension to body (body moves down when compressed)
+            // Damping (slower return)
+            this.suspensionCompression *= 0.90
+            
+            // Apply suspension to body
             this.bodyGroup.position.y = -this.suspensionCompression
             
-            // ============= DRIFT TILT =============
-            // Extra tilt during drift for dramatic effect
+            // ============= DRIFT TILT (Enhanced) =============
             let driftTilt = 0
             if (playerState.isDrifting) {
-                driftTilt = playerState.driftAngle * 0.3
+                driftTilt = playerState.driftAngle * 0.25
+                
+                // Add tire slip visual feedback
+                const tireSlip = playerState.tireSlip || 0
+                driftTilt += tireSlip * 0.15
             }
             
-            // Calculate target tilt based on turn rate
-            const targetTilt = Math.max(-0.06, Math.min(0.06, -rotationDiff * 4)) + driftTilt
+            // Calculate target tilt
+            const targetTilt = Math.max(-0.08, Math.min(0.08, -rotationDiff * 5)) + driftTilt
             
-// Smoothly interpolate current tilt towards target (lerp)
-            this.currentTilt += (targetTilt - this.currentTilt) * 0.12
+            // Smoothly interpolate
+            this.currentTilt += (targetTilt - this.currentTilt) * 0.15
             
-            // Apply smooth tilt
+            // Apply combined rotations
             this.helper.rotation.z = this.currentTilt + this.bodyRoll
-            
-            // Apply pitch (front/back tilt)
             this.bodyGroup.rotation.x = this.bodyPitch
             
-            // ============= BRAKE LIGHTS =============
-            // Brighten brake lights when decelerating
-            if (acceleration < -2) {
-                this.taillightMaterial.emissiveIntensity = 1.5
+            // ============= DYNAMIC BRAKE LIGHTS =============
+            if (acceleration < -3) {
+                this.taillightMaterial.emissiveIntensity = 1.8
+                this.taillightMaterial.color.setHex(0xff0000)
             } else {
                 this.taillightMaterial.emissiveIntensity = 0.8
+                this.taillightMaterial.color.setHex(0xff2222)
             }
             
-            // ============= HEADLIGHT INTENSITY =============
-            // Brighten headlights at high speed for dramatic effect
-            const speedRatio = speed / 30
-            this.headlightMaterial.emissiveIntensity = 1.2 + speedRatio * 0.5
+            // ============= DYNAMIC HEADLIGHTS =============
+            const speedRatio = speed / 50
+            this.headlightMaterial.emissiveIntensity = 1.2 + speedRatio * 0.8 + turboCharge * 0.5
             
             // Store values for next frame
             this.previousRotation = playerState.rotation

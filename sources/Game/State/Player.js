@@ -15,18 +15,22 @@ export default class Player
 
         this.rotation = 0
         
-        // Advanced Car Physics Parameters
+        // Ultra-Premium Car Physics Parameters (150 km/h = ~42 m/s = 50 units/s)
         this.acceleration = 0          // Current acceleration
         this.velocity = vec3.create()  // Current velocity vector
-        this.maxSpeed = 30             // Maximum speed (boost)
-        this.normalMaxSpeed = 15       // Normal max speed
-        this.accelerationRate = 8      // How fast we accelerate
-        this.decelerationRate = 6      // How fast we slow down
-        this.frictionRate = 3          // Natural friction when no input
-        this.turnSpeed = 2.5           // How fast we can turn
-        this.driftFactor = 0.92        // Drift amount (0.9-0.99, lower = more drift)
-        this.grip = 0.88               // Tire grip (higher = less slide)
-        this.speedBasedGrip = true     // Grip decreases at high speed
+        this.maxSpeed = 50             // Maximum speed (150 km/h boost)
+        this.normalMaxSpeed = 35       // Normal max speed (~120 km/h)
+        this.accelerationRate = 12     // Base acceleration power
+        this.decelerationRate = 8      // Braking power
+        this.frictionRate = 2.5        // Rolling friction
+        this.turnSpeed = 3.0           // Base turn speed
+        this.driftFactor = 0.92        // Drift amount
+        this.grip = 0.88               // Base tire grip
+        this.speedBasedGrip = true     // Dynamic grip system
+        
+        // Aerodynamics (drag increases with speed²)
+        this.dragCoefficient = 0.015   // Air resistance
+        this.downforce = 0.02          // High-speed stability
         
         // Weight transfer and suspension
         this.weightTransfer = 0        // Forward/backward weight shift
@@ -36,9 +40,29 @@ export default class Player
         this.isDrifting = false
         this.driftAngle = 0
         this.skidAmount = 0
+        this.tireSlip = 0              // Tire slip percentage
+        
+        // Gear system (automatic transmission)
+        this.currentGear = 1
+        this.gearRatios = [0, 3.5, 2.2, 1.5, 1.0, 0.7] // 0=reverse, 1-5=forward gears
+        this.gearShiftRPM = [0, 10, 18, 28, 40, 50]    // Speed thresholds for upshift
+        this.engineRPM = 1000          // Engine RPM (for simulation)
+        
+        // Turbo boost system
+        this.turboCharge = 0           // Turbo pressure (0-1)
+        this.turboActive = false       // Turbo engaged
+        
+        // G-Force calculation
+        this.gForce = { x: 0, y: 0, z: 0 }
+        
+        // Performance telemetry
+        this.topSpeed = 0              // Record top speed
+        this.avgSpeed = 0
+        this.speedSamples = []
         
         this.speed = 0
         this.targetSpeed = 0
+        this.previousVelocity = vec3.create()
 
         this.position = {}
         this.position.current = vec3.fromValues(10, 0, 1)
@@ -86,16 +110,17 @@ export default class Player
                 targetRotation -= Math.PI * 0.5
             }
             
-            // Smooth rotation with speed-dependent turning
+            // Smooth rotation with advanced speed-dependent turning
             let rotationDiff = targetRotation - this.rotation
             
             // Normalize angle difference
             while(rotationDiff > Math.PI) rotationDiff -= Math.PI * 2
             while(rotationDiff < -Math.PI) rotationDiff += Math.PI * 2
             
-            // Speed-based turning (harder to turn at high speed)
-            const speedFactor = Math.max(0.3, 1 - (this.speed / currentMaxSpeed) * 0.6)
-            const turnRate = this.turnSpeed * speedFactor * delta
+            // Advanced speed-based turning with downforce
+            const speedFactor = Math.max(0.25, 1 - (this.speed / currentMaxSpeed) * 0.7)
+            const downforceBonus = this.speed > 25 ? this.downforce * (this.speed - 25) * 0.05 : 0
+            const turnRate = (this.turnSpeed + downforceBonus) * speedFactor * delta
             
             // Apply smooth turning
             if(Math.abs(rotationDiff) > turnRate) {
@@ -104,54 +129,104 @@ export default class Player
                 this.rotation = targetRotation
             }
             
-            // Detect drifting (sharp turns at high speed)
-            const isDriftInput = Math.abs(rotationDiff) > 0.5 && this.speed > currentMaxSpeed * 0.6
+            // Advanced drift detection with tire slip
+            const isDriftInput = Math.abs(rotationDiff) > 0.4 && this.speed > currentMaxSpeed * 0.5
             this.isDrifting = isDriftInput
-            this.driftAngle = isDriftInput ? rotationDiff * 0.4 : 0
+            this.driftAngle = isDriftInput ? rotationDiff * 0.35 : 0
+            this.tireSlip = isDriftInput ? Math.min(1, Math.abs(rotationDiff) * this.speed * 0.03) : 0
             
-            // Acceleration (with realistic curve)
-            this.targetSpeed = currentMaxSpeed * (inputForward < 0 ? 0.6 : 1) // Slower reverse
+            // Gear shifting logic (automatic transmission)
+            if(inputForward > 0) {
+                // Upshift
+                if(this.currentGear < 5 && this.speed > this.gearShiftRPM[this.currentGear + 1]) {
+                    this.currentGear++
+                }
+                // Downshift
+                if(this.currentGear > 1 && this.speed < this.gearShiftRPM[this.currentGear] - 3) {
+                    this.currentGear--
+                }
+            } else if(inputForward < 0) {
+                this.currentGear = 0 // Reverse
+            }
+            
+            // Gear-based acceleration (power varies by gear)
+            const gearRatio = this.gearRatios[this.currentGear]
+            const gearAcceleration = this.accelerationRate * gearRatio
+            
+            // Turbo boost system (activated during boost key)
+            if(boost && this.speed > 20) {
+                this.turboActive = true
+                this.turboCharge = Math.min(1, this.turboCharge + delta * 2)
+            } else {
+                this.turboActive = false
+                this.turboCharge = Math.max(0, this.turboCharge - delta * 3)
+            }
+            
+            const turboMultiplier = 1 + this.turboCharge * 0.5
+            
+            // Target speed calculation
+            this.targetSpeed = currentMaxSpeed * (inputForward < 0 ? 0.5 : 1)
             const speedDiff = this.targetSpeed - this.speed
             
-            // Acceleration curve (easier to accelerate at low speed)
-            const accelCurve = 1 - (this.speed / currentMaxSpeed) * 0.5
-            this.acceleration = this.accelerationRate * accelCurve * Math.sign(speedDiff)
+            // Advanced acceleration curve with gear ratios
+            const accelCurve = 1 - (this.speed / currentMaxSpeed) * 0.4
+            this.acceleration = gearAcceleration * accelCurve * turboMultiplier * Math.sign(speedDiff)
+            
+            // Apply aerodynamic drag (increases with speed²)
+            const dragForce = this.dragCoefficient * this.speed * this.speed
+            this.acceleration -= dragForce * Math.sign(this.speed)
             
             this.speed += this.acceleration * delta
             this.speed = Math.max(0, Math.min(currentMaxSpeed, this.speed))
             
             // Weight transfer during acceleration/braking
-            this.weightTransfer = this.acceleration * 0.03
-            this.lateralWeight = rotationDiff * this.speed * 0.05
+            this.weightTransfer = this.acceleration * 0.04
+            this.lateralWeight = rotationDiff * this.speed * 0.06
         }
         else
         {
-            // Deceleration when no input
+            // Deceleration when no input (with aerodynamic drag)
             if(this.speed > 0.1) {
-                this.speed -= this.decelerationRate * delta
+                const dragForce = this.dragCoefficient * this.speed * this.speed
+                this.speed -= (this.decelerationRate + dragForce) * delta
                 this.speed = Math.max(0, this.speed)
-                this.weightTransfer = -this.decelerationRate * 0.02
+                this.weightTransfer = -(this.decelerationRate + dragForce) * 0.02
             } else {
                 this.speed = 0
                 this.weightTransfer = 0
             }
             
+            // Idle gear
+            if(this.speed < 2 && this.currentGear > 1) {
+                this.currentGear = 1
+            }
+            
             this.isDrifting = false
             this.driftAngle = 0
-            this.lateralWeight *= 0.9
+            this.tireSlip = 0
+            this.lateralWeight *= 0.92
+            this.turboActive = false
+            this.turboCharge *= 0.95
         }
         
-        // Apply friction
-        this.speed *= Math.pow(1 - (this.frictionRate * 0.1), delta)
+        // Apply rolling friction
+        this.speed *= Math.pow(1 - (this.frictionRate * 0.08), delta)
         
-        // Calculate velocity with drift
+        // Engine RPM simulation (for visual/audio feedback)
+        const gearRPMBase = this.currentGear > 0 ? 1500 + (this.speed / this.gearRatios[this.currentGear]) * 150 : 1000
+        this.engineRPM = gearRPMBase + this.turboCharge * 500
+        
+        // Calculate velocity with advanced drift physics
         const moveRotation = this.rotation + this.driftAngle
         
-        // Dynamic grip based on speed
+        // Dynamic grip with tire slip and aerodynamics
         let currentGrip = this.grip
         if(this.speedBasedGrip) {
-            currentGrip = this.grip + (1 - this.grip) * (this.speed / currentMaxSpeed) * 0.3
+            currentGrip = this.grip - (this.speed / currentMaxSpeed) * 0.15
+            currentGrip += this.downforce * (this.speed / currentMaxSpeed) * 0.1 // Downforce improves grip at speed
         }
+        currentGrip = Math.max(0.6, Math.min(0.95, currentGrip))
+        currentGrip -= this.tireSlip * 0.3 // Slip reduces grip
         
         // Calculate target velocity
         const targetVelocity = vec3.fromValues(
@@ -160,12 +235,22 @@ export default class Player
             -Math.cos(moveRotation) * this.speed
         )
         
-        // Apply drift physics (velocity doesn't instantly match direction)
+        // Apply advanced drift physics with momentum preservation
         this.velocity[0] += (targetVelocity[0] - this.velocity[0]) * currentGrip
         this.velocity[2] += (targetVelocity[2] - this.velocity[2]) * currentGrip
         
-        // Skid calculation (difference between direction and velocity)
-        this.skidAmount = Math.abs(this.driftAngle) * this.speed * 0.5
+        // Calculate G-Forces (for visual effects)
+        const velocityChange = vec3.create()
+        vec3.sub(velocityChange, this.velocity, this.previousVelocity)
+        vec3.scale(velocityChange, velocityChange, 1 / (delta || 0.016))
+        
+        this.gForce.x = velocityChange[0] * 0.1 // Lateral G
+        this.gForce.z = velocityChange[2] * 0.1 // Longitudinal G
+        
+        vec3.copy(this.previousVelocity, this.velocity)
+        
+        // Skid calculation
+        this.skidAmount = Math.abs(this.driftAngle) * this.speed * 0.5 + this.tireSlip * 10
         
         // Apply velocity to position
         this.position.current[0] += this.velocity[0] * delta
@@ -173,6 +258,12 @@ export default class Player
 
         vec3.sub(this.position.delta, this.position.current, this.position.previous)
         vec3.copy(this.position.previous, this.position.current)
+        
+        // Performance telemetry
+        this.topSpeed = Math.max(this.topSpeed, this.speed)
+        this.speedSamples.push(this.speed)
+        if(this.speedSamples.length > 100) this.speedSamples.shift()
+        this.avgSpeed = this.speedSamples.reduce((a, b) => a + b, 0) / this.speedSamples.length
         
         // Update view
         this.camera.update()
@@ -186,5 +277,12 @@ export default class Player
         } else {
             this.position.current[1] = 0
         }
+    }
+    
+    // Convert speed to km/h for display
+    getSpeedKmH()
+    {
+        // 1 unit/s = 3 km/h (calibrated for 150 km/h at max)
+        return Math.round(this.speed * 3)
     }
 }
