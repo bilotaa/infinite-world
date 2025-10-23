@@ -60,8 +60,8 @@ export default class Terrain
                 THREE.UVMapping,
                 THREE.ClampToEdgeWrapping,
                 THREE.ClampToEdgeWrapping,
-                THREE.LinearFilter,
-                THREE.LinearFilter
+                THREE.NearestFilter,  // Changed from LinearFilter for sharp pixels
+                THREE.NearestFilter   // Changed from LinearFilter for sharp pixels
             )
             this.texture.flipY = false
             this.texture.needsUpdate = true
