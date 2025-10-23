@@ -277,9 +277,9 @@ export default class Player
         const elevation = chunks.getElevationForPosition(this.position.current[0], this.position.current[2])
 
         if(elevation !== null && elevation !== undefined) {
-            this.position.current[1] = elevation
+            this.position.current[1] = elevation + 0.52
         } else {
-            this.position.current[1] = 0
+            this.position.current[1] = 0.52
         }
     }
     
