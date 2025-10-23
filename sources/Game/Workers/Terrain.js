@@ -8,6 +8,45 @@ const linearStep = (edgeMin, edgeMax, value) =>
     return Math.max(0.0, Math.min(1.0, (value - edgeMin) / (edgeMax - edgeMin)))
 }
 
+const smoothStep = (edge0, edge1, x) => {
+    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
+    return t * t * (3 - 2 * t)
+}
+
+// Road configuration
+const ROAD_WIDTH = 8.0           // Width of the road
+const ROAD_SMOOTH_WIDTH = 4.0    // Additional width for smooth blending
+const ROAD_HEIGHT = 0.5          // Height of the road surface
+const ROAD_CENTER_X = 0.0        // Road runs along X=0
+const ROAD_START_Z = -50.0       // Road starts at Z=-50
+const ROAD_END_Z = 100.0         // Road ends at Z=100
+
+// Check if a point is on or near the road
+const getRoadInfluence = (x, z) => {
+    // Road runs along the Z axis at X = ROAD_CENTER_X
+    // Only exists between ROAD_START_Z and ROAD_END_Z
+    
+    if (z < ROAD_START_Z || z > ROAD_END_Z) {
+        return 0.0 // Outside road bounds
+    }
+    
+    const distanceFromRoadCenter = Math.abs(x - ROAD_CENTER_X)
+    const halfRoadWidth = ROAD_WIDTH / 2.0
+    const totalWidth = halfRoadWidth + ROAD_SMOOTH_WIDTH
+    
+    if (distanceFromRoadCenter < halfRoadWidth) {
+        // On the road - full influence
+        return 1.0
+    } else if (distanceFromRoadCenter < totalWidth) {
+        // In the smooth blending zone
+        const blendDistance = distanceFromRoadCenter - halfRoadWidth
+        const blendFactor = 1.0 - (blendDistance / ROAD_SMOOTH_WIDTH)
+        return smoothStep(0.0, 1.0, blendFactor)
+    }
+    
+    return 0.0 // Too far from road
+}
+
 const getElevation = (x, y, lacunarity, persistence, iterations, baseFrequency, baseAmplitude, power, elevationOffset, iterationsOffsets) =>
 {
     let elevation = 0
@@ -29,6 +68,13 @@ const getElevation = (x, y, lacunarity, persistence, iterations, baseFrequency, 
     elevation = Math.pow(Math.abs(elevation), power) * Math.sign(elevation)
     elevation *= baseAmplitude
     elevation += elevationOffset
+
+    // Apply road influence
+    const roadInfluence = getRoadInfluence(x, y)
+    if (roadInfluence > 0.0) {
+        // Blend between terrain elevation and road height
+        elevation = elevation * (1.0 - roadInfluence) + ROAD_HEIGHT * roadInfluence
+    }
 
     return elevation
 }
