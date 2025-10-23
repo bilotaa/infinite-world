@@ -11,6 +11,13 @@
     width: 100vw;
     height: 100%;
     touch-action: none;
+    pointer-events: none; /* Disabled initially until homepage is dismissed */
+}
+
+/* Game becomes interactive after homepage is dismissed */
+.game.active
+{
+    pointer-events: auto;
 }
 
 .ui

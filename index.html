@@ -5,8 +5,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>PIWU</title>
         <link rel="stylesheet" href="./sources/style.css">
+        <link rel="stylesheet" href="./sources/Homepage/homepage.css">
     </head>
     <body>
+        <!-- Homepage Overlay -->
+        <div class="homepage-overlay">
+            <h1 class="homepage-title">Slow Roads</h1>
+            <div class="username-container">
+                <input type="text" id="username-input" placeholder="Enter Username" maxlength="20" autocomplete="off">
+                <div class="username-error" id="username-error"></div>
+            </div>
+            <div class="car-selection">
+                <div class="car-preview" id="car-preview-1" tabindex="0" role="button" aria-label="Select Cybertruck"></div>
+                <div class="car-preview" id="car-preview-2" tabindex="0" role="button" aria-label="Select Supra MK4"></div>
+                <div class="car-preview" id="car-preview-3" tabindex="0" role="button" aria-label="Select Lamborghini"></div>
+            </div>
+            <button class="start-game-btn" id="start-game-btn" disabled>Start Game</button>
+        </div>
+
+        <!-- Game Container -->
         <div class="game">
             <div class="ui">
                 <div class="mobile-warning">

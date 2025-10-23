@@ -11,16 +11,20 @@ export default class Game
         return Game.instance
     }
 
-    constructor()
+    constructor(options = {})
     {
         if(Game.instance)
             return Game.instance
 
         Game.instance = this
 
+        // Store player data from homepage
+        this.username = options.username || 'Player'
+        this.selectedCar = options.carId || 'cybertruck'
+
         this.seed = 'p'
         this.debug = new Debug()
-        this.state = new State()
+        this.state = new State({ username: this.username, carId: this.selectedCar })
         this.view = new View()
         
         window.addEventListener('resize', () =>

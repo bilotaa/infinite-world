@@ -1,0 +1,182 @@
+import CarPreview from './CarPreview.js'
+import { createCybertruckModel } from './CarModels/Cybertruck.js'
+import { createSupraMK4Model } from './CarModels/SupraMK4.js'
+import { createLamborghiniModel } from './CarModels/Lamborghini.js'
+
+/**
+ * Homepage - Main controller for the game homepage overlay
+ * Manages user input, car selection, validation, and game start
+ */
+export default class Homepage {
+    constructor() {
+        this.selectedCarId = 'cybertruck' // Default selection
+        this.username = ''
+        this.onStartCallback = null
+
+        this.cars = [
+            { id: 'cybertruck', name: 'Cybertruck', modelFn: createCybertruckModel },
+            { id: 'supra', name: 'Supra MK4', modelFn: createSupraMK4Model },
+            { id: 'lamborghini', name: 'Lamborghini', modelFn: createLamborghiniModel }
+        ]
+
+        this.carPreviews = []
+
+        this.init()
+    }
+
+    init() {
+        this.cacheElements()
+        this.setupCarPreviews()
+        this.setupEventListeners()
+        this.updateButtonState()
+
+        // Select first car by default
+        this.selectCar('cybertruck')
+    }
+
+    cacheElements() {
+        this.overlay = document.querySelector('.homepage-overlay')
+        this.usernameInput = document.getElementById('username-input')
+        this.usernameError = document.getElementById('username-error')
+        this.startButton = document.getElementById('start-game-btn')
+
+        this.carContainers = [
+            document.getElementById('car-preview-1'),
+            document.getElementById('car-preview-2'),
+            document.getElementById('car-preview-3')
+        ]
+    }
+
+    setupCarPreviews() {
+        this.cars.forEach((car, index) => {
+            const container = this.carContainers[index]
+            const carModel = car.modelFn()
+            const preview = new CarPreview(container, carModel, car.name)
+
+            this.carPreviews.push(preview)
+
+            // Add car selection click handler
+            container.addEventListener('click', () => this.selectCar(car.id))
+
+            // Store car ID on container for reference
+            container.dataset.carId = car.id
+
+            // Add car name label
+            const label = document.createElement('div')
+            label.className = 'car-name-label'
+            label.textContent = car.name
+            container.appendChild(label)
+        })
+    }
+
+    setupEventListeners() {
+        // Real-time username validation
+        this.usernameInput.addEventListener('input', () => {
+            this.validateUsername()
+            this.updateButtonState()
+        })
+
+        // Enter key in input triggers game start
+        this.usernameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && this.isUsernameValid()) {
+                this.startGame()
+            }
+        })
+
+        // Start button click
+        this.startButton.addEventListener('click', () => {
+            if (this.isUsernameValid()) {
+                this.startGame()
+            }
+        })
+    }
+
+    selectCar(carId) {
+        this.selectedCarId = carId
+
+        // Update visual selection state
+        this.carContainers.forEach(container => {
+            if (container.dataset.carId === carId) {
+                container.classList.add('selected')
+            } else {
+                container.classList.remove('selected')
+            }
+        })
+    }
+
+    validateUsername() {
+        const rawValue = this.usernameInput.value
+        const trimmedValue = rawValue.trim()
+
+        // Clear previous error
+        this.usernameError.textContent = ''
+        this.usernameError.classList.remove('visible')
+
+        // No validation during typing - only on button click
+        // This just updates the internal username value
+        this.username = trimmedValue
+
+        return this.isUsernameValid()
+    }
+
+    isUsernameValid() {
+        const trimmed = this.usernameInput.value.trim()
+        return trimmed.length >= 2 && trimmed.length <= 20
+    }
+
+    updateButtonState() {
+        if (this.isUsernameValid()) {
+            this.startButton.disabled = false
+        } else {
+            this.startButton.disabled = true
+        }
+    }
+
+    startGame() {
+        // Prevent double-execution
+        if (this.isStarting) return
+        this.isStarting = true
+
+        // Final validation
+        if (!this.isUsernameValid()) {
+            this.usernameError.textContent = 'Username must be 2-20 characters'
+            this.usernameError.classList.add('visible')
+            this.isStarting = false
+            return
+        }
+
+        // Disable button during transition
+        this.startButton.disabled = true
+
+        // Get trimmed username
+        const finalUsername = this.usernameInput.value.trim()
+
+        // Trigger fade out transition
+        this.overlay.classList.add('fade-out')
+
+        // Wait for fade animation to complete (1s)
+        setTimeout(() => {
+            // Hide overlay completely
+            this.overlay.style.display = 'none'
+
+            // Activate game container (make it interactive)
+            document.querySelector('.game').classList.add('active')
+
+            // Dispose of Three.js resources
+            this.carPreviews.forEach(preview => preview.dispose())
+
+            // Call the game start callback with player data
+            if (this.onStartCallback) {
+                this.onStartCallback(finalUsername, this.selectedCarId)
+            }
+        }, 1000)
+    }
+
+    /**
+     * Register callback for when "Start Game" is clicked
+     * @param {Function} callback - Called with (username, carId) parameters
+     */
+    onStart(callback) {
+        this.onStartCallback = callback
+    }
+}

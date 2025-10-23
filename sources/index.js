@@ -1,6 +1,14 @@
 import Game from '@/Game.js'
+import Homepage from './Homepage/Homepage.js'
 
-const game = new Game()
+// Initialize homepage first
+const homepage = new Homepage()
 
-if(game.view)
-    document.querySelector('.game').append(game.view.renderer.instance.domElement)
+// Setup game start handler
+homepage.onStart((username, carId) => {
+    // Initialize game with player data
+    const game = new Game({ username, carId })
+
+    if(game.view)
+        document.querySelector('.game').append(game.view.renderer.instance.domElement)
+})

@@ -6,12 +6,16 @@ import Camera from './Camera.js'
 
 export default class Player
 {
-    constructor()
+    constructor(options = {})
     {
         this.game = Game.getInstance()
         this.state = State.getInstance()
         this.time = this.state.time
         this.controls = this.state.controls
+
+        // Store player data from homepage
+        this.username = options.username || 'Player'
+        this.selectedCar = options.carId || 'cybertruck'
 
         this.rotation = 0
         

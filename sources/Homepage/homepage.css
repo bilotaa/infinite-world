@@ -1,0 +1,415 @@
+/* ========================================
+   HOMEPAGE OVERLAY - Main Container
+   ======================================== */
+
+.homepage-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+
+    /* Scenic terrain gradient background (fallback and primary) */
+    background: linear-gradient(to bottom, 
+        #87CEEB 0%,      /* Sky blue at top */
+        #B0D9E8 20%,     /* Lighter blue */
+        #C8D5B9 40%,     /* Light green hills */
+        #9DB380 60%,     /* Mid green hills */
+        #8B9A7E 80%,     /* Dark green hills */
+        #7A8870 100%     /* Darkest green at bottom */
+    );
+
+    /* Optional: Add background image if available
+       background-image: url('path-to-scenic-image.jpg');
+       background-size: cover;
+       background-position: center;
+       background-repeat: no-repeat;
+    */
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 50px;
+
+    /* Initial fade-in animation */
+    animation: fadeIn 0.5s ease-out;
+
+    /* Smooth transitions */
+    opacity: 1;
+    transition: opacity 1s ease-out, backdrop-filter 1s ease-out;
+}
+
+/* Fade-in on page load */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Fade-out when starting game */
+.homepage-overlay.fade-out {
+    opacity: 0;
+    backdrop-filter: blur(10px);
+}
+
+/* ========================================
+   HOMEPAGE TITLE
+   ======================================== */
+
+.homepage-title {
+    font-family: 'Arial Black', 'Arial Bold', sans-serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: #3a4a3a;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    text-shadow:
+        2px 2px 4px rgba(255, 255, 255, 0.4),
+        -1px -1px 2px rgba(0, 0, 0, 0.2);
+    letter-spacing: 4px;
+}
+
+/* ========================================
+   USERNAME INPUT SECTION
+   ======================================== */
+
+.username-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 450px;
+}
+
+#username-input {
+    width: 100%;
+    max-width: 450px;
+    height: 60px;
+    padding: 0 24px;
+
+    font-size: 20px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #2a2a2a;
+
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(5px);
+
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+
+    outline: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    transition: all 0.2s ease;
+}
+
+#username-input::placeholder {
+    color: rgba(0, 0, 0, 0.35);
+    font-weight: 300;
+}
+
+#username-input:focus {
+    border-color: #4A90E2;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+}
+
+.username-error {
+    height: 20px;
+    font-size: 14px;
+    color: #ff3333;
+    font-weight: 600;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.username-error.visible {
+    opacity: 1;
+}
+
+/* ========================================
+   CAR SELECTION SECTION
+   ======================================== */
+
+.car-selection {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 30px;
+    width: 100%;
+    max-width: 800px;
+    padding: 20px;
+}
+
+.car-preview {
+    position: relative;
+    width: 220px;
+    height: 220px;
+
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 16px;
+
+    cursor: pointer;
+    overflow: hidden;
+
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+
+    transition: all 0.3s ease;
+}
+
+.car-preview:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Selected state styling */
+.car-preview.selected {
+    border: 4px solid #00FFFF;
+    border-radius: 16px;
+    transform: scale(1.05);
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        0 0 30px rgba(0, 255, 255, 0.6),
+        inset 0 0 20px rgba(0, 255, 255, 0.1);
+}
+
+.car-preview.selected:hover {
+    transform: scale(1.05) translateY(-8px);
+}
+
+/* Three.js canvas inside car preview */
+.car-preview canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 13px;
+}
+
+/* Car name label */
+.car-name-label {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+
+    border-radius: 20px;
+
+    pointer-events: none;
+    z-index: 10;
+}
+
+.car-preview.selected .car-name-label {
+    background: rgba(0, 255, 255, 0.3);
+    color: #00FFFF;
+    font-weight: 700;
+}
+
+/* ========================================
+   START GAME BUTTON
+   ======================================== */
+
+.start-game-btn {
+    width: 320px;
+    height: 70px;
+
+    font-size: 22px;
+    font-weight: 700;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: 1px;
+
+    color: #ffffff;
+    background: #465A6E;
+
+    border: none;
+    border-radius: 35px;
+
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+
+    cursor: pointer;
+    outline: none;
+
+    transition: all 0.3s ease;
+}
+
+/* Enabled state hover */
+.start-game-btn:not(:disabled):hover {
+    transform: scale(1.05);
+    background: #536d85;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Click animation */
+.start-game-btn:not(:disabled):active {
+    transform: scale(0.98);
+}
+
+/* Disabled state */
+.start-game-btn:disabled {
+    background: rgba(200, 200, 200, 0.5);
+    color: rgba(255, 255, 255, 0.6);
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+/* Tablet and smaller */
+@media (max-width: 900px) {
+    .homepage-title {
+        font-size: 56px;
+    }
+
+    .car-selection {
+        gap: 20px;
+    }
+
+    .car-preview {
+        width: 180px;
+        height: 180px;
+    }
+
+    #username-input {
+        max-width: 350px;
+        height: 55px;
+        font-size: 18px;
+    }
+
+    .start-game-btn {
+        width: 280px;
+        height: 65px;
+        font-size: 20px;
+    }
+}
+
+/* Mobile landscape and portrait */
+@media (max-width: 700px) {
+    .homepage-overlay {
+        gap: 35px;
+        padding: 20px;
+    }
+
+    .homepage-title {
+        font-size: 42px;
+        letter-spacing: 2px;
+    }
+
+    .car-selection {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .car-preview {
+        width: 200px;
+        height: 200px;
+    }
+
+    #username-input {
+        max-width: 300px;
+        height: 50px;
+        font-size: 16px;
+    }
+
+    .start-game-btn {
+        width: 260px;
+        height: 60px;
+        font-size: 18px;
+    }
+}
+
+/* Very small mobile */
+@media (max-width: 400px) {
+    .homepage-title {
+        font-size: 36px;
+    }
+
+    .car-preview {
+        width: 160px;
+        height: 160px;
+    }
+
+    #username-input {
+        max-width: 260px;
+    }
+
+    .start-game-btn {
+        width: 240px;
+        height: 55px;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+.car-preview:focus {
+    outline: 3px solid #4A90E2;
+    outline-offset: 2px;
+}
+
+.start-game-btn:focus-visible {
+    outline: 3px solid #4A90E2;
+    outline-offset: 4px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .homepage-overlay {
+        background: #ffffff;
+    }
+
+    .homepage-title {
+        color: #000000;
+    }
+
+    #username-input {
+        border: 3px solid #000000;
+        background: #ffffff;
+        color: #000000;
+    }
+
+    .car-preview {
+        border: 3px solid #000000;
+    }
+
+    .car-preview.selected {
+        border: 4px solid #0000ff;
+    }
+
+    .start-game-btn {
+        background: #000000;
+        color: #ffffff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
