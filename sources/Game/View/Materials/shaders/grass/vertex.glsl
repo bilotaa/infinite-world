@@ -95,7 +95,14 @@ void main()
     terrainData += step(0.0, terrainCUv.x) * step(terrainCUv.x, 1.0) * step(0.0, terrainCUv.y) * step(terrainCUv.y, 1.0) * terrainCColor;
     terrainData += step(0.0, terrainDUv.x) * step(terrainDUv.x, 1.0) * step(0.0, terrainDUv.y) * step(terrainDUv.y, 1.0) * terrainDColor;
 
-    vec3 normal = terrainData.rgb;
+    // Extract road influence from GREEN channel
+    float roadInfluence = terrainData.g;
+    
+    // Reconstruct normal (normal.y was replaced by road influence in texture)
+    float normalX = terrainData.r;
+    float normalZ = terrainData.b;
+    float normalY = sqrt(max(0.0, 1.0 - normalX * normalX - normalZ * normalZ));
+    vec3 normal = vec3(normalX, normalY, normalZ);
 
     modelPosition.y += terrainData.a;
     modelCenter.y += terrainData.a;
@@ -107,8 +114,7 @@ void main()
     float distanceScale = getGrassAttenuation(modelCenter.xz);
     float slopeScale = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
     
-    // Road attenuation - hide grass on road
-    float roadInfluence = getRoadInfluence(modelCenter.x);
+    // Road attenuation - hide grass on road (using texture data)
     float roadScale = 1.0 - roadInfluence;
     
     float scale = distanceScale * slopeScale * roadScale;
