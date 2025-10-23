@@ -73,6 +73,8 @@ export default class Terrain
             // Create mesh
             this.mesh = new THREE.Mesh(this.geometry, this.terrains.material)
             this.mesh.userData.texture = this.texture
+            this.mesh.frustumCulled = false  // Always render, no culling issues
+            this.mesh.visible = true          // Ensure visible from start
             // this.mesh = new THREE.Mesh(this.geometry, new THREE.MeshNormalMaterial())
             this.scene.add(this.mesh)
             
