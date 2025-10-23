@@ -28,7 +28,15 @@ const float EDGE_LINE_WIDTH = 0.8;                       // HUGE edge lines (3.2
 const float DASH_LENGTH = 5.0;                           // Longer dashes
 const float DASH_GAP = 2.0;
 const float EDGE_LINE_POSITION = 7.0;                    // Distance from center
-const float ROAD_CENTER_X = 0.0;
+
+// Road center X coordinate (dynamic curves matching Road.js)
+float getRoadCenterX(float z) {
+    float amplitude = 40.0;
+    float frequency = 0.008;
+    float frequency2 = 0.003;
+    return amplitude * sin(z * frequency) * sin(z * frequency2);
+}
+
 const float ROAD_SMOOTH_WIDTH = 0.5;                     // Sharp edges to match worker
 
 float smoothStep(float edge0, float edge1, float x) {
@@ -37,7 +45,7 @@ float smoothStep(float edge0, float edge1, float x) {
 }
 
 float getRoadInfluence(float x) {
-    float distanceFromRoadCenter = abs(x - ROAD_CENTER_X);
+    float distanceFromRoadCenter = abs(x);
     float halfRoadWidth = ROAD_HALF_WIDTH;
     float totalWidth = halfRoadWidth + ROAD_SMOOTH_WIDTH;
     
@@ -110,7 +118,7 @@ void main()
     vec3 grassColor = mix(uGrassShadedColor, uGrassDefaultColor, 1.0 - grassAttenuation);
 
     // Calculate road influence from world position
-    float roadInfluence = getRoadInfluence(modelPosition.x);
+    float roadInfluence = getRoadInfluence(modelPosition.x - getRoadCenterX(modelPosition.z));
     
     // Start with base road/grass color blend
     vec3 color = mix(grassColor, ROAD_COLOR, roadInfluence);
