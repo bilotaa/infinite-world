@@ -451,10 +451,12 @@ onmessage = function(event)
 
             // Final texture
             const iTextureStride = (iZ * segments  + iX) * 4
-            texture[iTextureStride    ] = normals[iNormalStride    ]
-            texture[iTextureStride + 1] = normals[iNormalStride + 1]
-            texture[iTextureStride + 2] = normals[iNormalStride + 2]
-            texture[iTextureStride + 3] = position[1]
+            const roadInfluence = getRoadInfluence(position[0], position[2])
+            
+            texture[iTextureStride    ] = normals[iNormalStride    ]  // normal.x
+            texture[iTextureStride + 1] = roadInfluence              // ROAD INFLUENCE (replacing normal.y)
+            texture[iTextureStride + 2] = normals[iNormalStride + 2]  // normal.z
+            texture[iTextureStride + 3] = position[1]                 // elevation
         }
     }
 
