@@ -68,12 +68,28 @@ export default class Player
         this.targetSpeed = 0
         this.previousVelocity = vec3.create()
 
+        // Road curve parameters (must match Road.js)
+        this.roadCurveAmplitude = 40.0
+        this.roadCurveFrequency = 0.008
+        this.roadCurveFrequency2 = 0.003
+
         this.position = {}
-        this.position.current = vec3.fromValues(0, 0, 1)  // Spawn on road (X=0 is road center)
+        // Spawn on curved road
+        const spawnZ = 1
+        const spawnX = this.getRoadCenterX(spawnZ)
+        this.position.current = vec3.fromValues(spawnX, 0, spawnZ)
         this.position.previous = vec3.clone(this.position.current)
         this.position.delta = vec3.create()
 
         this.camera = new Camera(this)
+    }
+
+    // Calculate road center X position for any Z position (must match Road.js)
+    getRoadCenterX(z)
+    {
+        const curve1 = Math.sin(z * this.roadCurveFrequency) * this.roadCurveAmplitude
+        const curve2 = Math.sin(z * this.roadCurveFrequency2) * this.roadCurveAmplitude * 0.5
+        return curve1 + curve2
     }
 
     update()
