@@ -16,7 +16,7 @@ export default class State
         return State.instance
     }
 
-    constructor()
+    constructor(options = {})
     {
         if(State.instance)
             return State.instance
@@ -28,7 +28,7 @@ export default class State
         this.viewport = new Viewport()
         this.day = new DayCycle()
         this.sun = new Sun()
-        this.player = new Player()
+        this.player = new Player(options)
         this.terrains = new Terrains()
         this.chunks = new Chunks()
     }
