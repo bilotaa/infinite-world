@@ -109,12 +109,15 @@ void main()
     float grassAttenuation = grassDistanceAttenuation * grassSlopeAttenuation;
     vec3 grassColor = mix(uGrassShadedColor, uGrassDefaultColor, 1.0 - grassAttenuation);
 
+    // Calculate road influence from world position
+    float roadInfluence = getRoadInfluence(modelPosition.x);
+    
     // Start with base road/grass color blend
-    vec3 color = mix(grassColor, ROAD_COLOR, 1.0);
+    vec3 color = mix(grassColor, ROAD_COLOR, roadInfluence);
     
     // Add lane markings only on road surface
     float laneMarking = getRoadLaneMarking(modelPosition.xyz);
-    color = mix(color, LINE_COLOR, laneMarking);
+    color = mix(color, LINE_COLOR, laneMarking * roadInfluence);
 
     // Sun shade
     float sunShade = getSunShade(normal);
