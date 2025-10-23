@@ -20,11 +20,11 @@ varying vec3 vColor;
 #include ../partials/getGrassAttenuation.glsl;
 
 // Road visual constants
-const vec3 ROAD_COLOR = vec3(0.4, 0.4, 0.4);            // Lighter grey for better visibility
+const vec3 ROAD_COLOR = vec3(0.5, 0.5, 0.5);            // Brighter grey for better visibility in all lighting
 const vec3 LINE_COLOR = vec3(1.0, 1.0, 1.0);            // Pure white
 const float ROAD_HALF_WIDTH = 8.0;                       // Half width of road (doubled)
-const float CENTER_LINE_WIDTH = 0.4;                     // Much wider center line
-const float EDGE_LINE_WIDTH = 0.35;                      // Much wider edge lines
+const float CENTER_LINE_WIDTH = 0.5;                     // Extra wide center line
+const float EDGE_LINE_WIDTH = 0.45;                      // Extra wide edge lines
 const float DASH_LENGTH = 4.0;                           // Longer dashes
 const float DASH_GAP = 2.0;
 const float EDGE_LINE_POSITION = 7.5;                    // Distance from center (adjusted for wider road)
