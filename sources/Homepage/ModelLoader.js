@@ -123,28 +123,58 @@ export default class ModelLoader {
                     const center = new THREE.Vector3()
                     box.getCenter(center)
                     
-                    // Move model so bottom is at y=0 and centered on x/z
+                    // Create a container group for proper positioning
+                    const container = new THREE.Group()
+                    
+                    // Move model within container to center it
                     model.position.x = -center.x
-                    model.position.y = -box.min.y // Bottom touches ground
+                    model.position.y = -box.min.y // Bottom at container's origin
                     model.position.z = -center.z
                     
+                    // Add model to container
+                    container.add(model)
+                    
+                    // Lift container slightly (like procedural cars)
+                    // Procedural Supra uses 0.15, so use similar offset
+                    container.position.y = 0.3
+                    
                     console.log(`[ModelLoader] Model positioned at:`, {
-                        x: model.position.x.toFixed(2),
-                        y: model.position.y.toFixed(2),
-                        z: model.position.z.toFixed(2)
+                        localX: model.position.x.toFixed(2),
+                        localY: model.position.y.toFixed(2),
+                        localZ: model.position.z.toFixed(2),
+                        containerY: container.position.y.toFixed(2),
+                        modelHeight: size.y.toFixed(2)
                     })
                     
-                    // Configure model properties
+                    // Configure model properties and fix materials
                     let meshCount = 0
-                    model.traverse((child) => {
+                    container.traverse((child) => {
                         if (child.isMesh) {
                             meshCount++
                             child.castShadow = true
                             child.receiveShadow = true
                             
-                            // Ensure materials are visible
+                            // Fix materials to prevent black appearance
                             if (child.material) {
+                                // Clone material to avoid affecting other instances
+                                child.material = child.material.clone()
+                                
+                                // Ensure proper lighting response
                                 child.material.needsUpdate = true
+                                
+                                // Add slight emissive to prevent complete darkness
+                                if (child.material.color) {
+                                    child.material.emissive = child.material.color.clone()
+                                    child.material.emissiveIntensity = 0.15
+                                }
+                                
+                                // Adjust metalness/roughness for better visibility
+                                if (child.material.metalness !== undefined) {
+                                    child.material.metalness = Math.min(0.7, child.material.metalness)
+                                }
+                                if (child.material.roughness !== undefined) {
+                                    child.material.roughness = Math.max(0.3, child.material.roughness)
+                                }
                             }
                         }
                     })
@@ -152,7 +182,7 @@ export default class ModelLoader {
                     console.log(`[ModelLoader] Configured ${meshCount} meshes`)
                     console.log(`[ModelLoader] Model ready for use`)
 
-                    resolve(model)
+                    resolve(container)
                 },
                 (progress) => {
                     // Progress callback
