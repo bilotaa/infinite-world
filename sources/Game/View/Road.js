@@ -75,10 +75,10 @@ export default class Road
         const playerState = this.state.player
         const playerPosition = playerState.position.current
 
-        // Keep road centered on player
+        // Keep road centered on player Z position
         this.mesh.position.set(0, 0, playerPosition[2])
 
-        // Sample terrain height and update road geometry to follow terrain
+        // Sample terrain height and update road geometry to follow terrain and curves
         const positions = this.geometry.attributes.position.array
 
         for (let i = 0; i < positions.length; i += 3)
@@ -86,13 +86,21 @@ export default class Road
             const localX = positions[i]
             const localZ = positions[i + 2]
 
-            // World position
-            const worldX = this.mesh.position.x + localX
+            // World Z position
             const worldZ = this.mesh.position.z + localZ
+            
+            // Calculate road center for this Z position
+            const roadCenterX = this.getRoadCenterX(worldZ)
+            
+            // World X position (road center + local offset)
+            const worldX = roadCenterX + localX
 
             // Get terrain height at this position
             const terrainHeight = this.chunks.getElevationForPosition(worldX, worldZ)
 
+            // Update X position to follow curve
+            positions[i] = roadCenterX + localX
+            
             // Set road height slightly above terrain
             if (terrainHeight !== null) {
                 positions[i + 1] = terrainHeight + 0.52  // Slightly above road surface
