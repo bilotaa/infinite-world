@@ -123,13 +123,17 @@ void main()
     float sunShade = getSunShade(normal);
     color = getSunShadeColor(color, sunShade);
 
-    // Sun reflection
+    // Sun reflection (reduce intensity on steep slopes to prevent artifacts)
     float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
+    sunReflection *= (1.0 - slope);  // Reduce on steep slopes
     color = getSunReflectionColor(color, sunReflection);
 
     // Fog
     vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
     color = getFogColor(color, depth, screenUv);
+    
+    // Clamp to prevent neon artifacts
+    color = clamp(color, vec3(0.0), vec3(1.0));
 
     // vec3 dirtColor = vec3(0.3, 0.2, 0.1);
     // vec3 color = mix(dirtColor, grassColor, terrainData.g);
