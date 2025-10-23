@@ -89,10 +89,17 @@ void main()
 
     // Terrain data
     vec4 terrainData = texture2D(uTexture, uv);
-    vec3 normal = terrainData.rgb;
     
-    // Calculate road influence from world position
-    float roadInfluence = getRoadInfluence(modelPosition.x);
+    // Extract road influence from GREEN channel (stored in worker)
+    float roadInfluence = terrainData.g;
+    
+    // Reconstruct normal (normal.y was replaced by road influence in texture)
+    // Since normal is a unit vector: x² + y² + z² = 1
+    // So: y = sqrt(1 - x² - z²)
+    float normalX = terrainData.r;
+    float normalZ = terrainData.b;
+    float normalY = sqrt(max(0.0, 1.0 - normalX * normalX - normalZ * normalZ));
+    vec3 normal = vec3(normalX, normalY, normalZ);
 
     // Slope
     float slope = 1.0 - abs(dot(vec3(0.0, 1.0, 0.0), normal));
