@@ -5,9 +5,7 @@ import View from '@/View/View.js'
 import Debug from '@/Debug/Debug.js'
 import State from '@/State/State.js'
 
-import { createCybertruckModel } from '../../Homepage/CarModels/Cybertruck.js'
-import { createSupraMK4Model } from '../../Homepage/CarModels/SupraMK4.js'
-import { createLamborghiniModel } from '../../Homepage/CarModels/Lamborghini.js'
+import ModelLoader from '../../Homepage/ModelLoader.js'
 
 export default class Player
 {
@@ -36,15 +34,9 @@ export default class Player
         // Get selected car from player state
         const carId = this.state.player.selectedCar
 
-        // Create the appropriate car model based on selection
-        if (carId === 'supra') {
-            this.helper = createSupraMK4Model()
-        } else if (carId === 'lamborghini') {
-            this.helper = createLamborghiniModel()
-        } else {
-            // Default to Cybertruck
-            this.helper = createCybertruckModel()
-        }
+        // Get model from cache (already preloaded)
+        const modelLoader = ModelLoader.getInstance()
+        this.helper = modelLoader.getModel(carId)
 
         // Store reference to body materials for animations
         // Find body material from the car model
