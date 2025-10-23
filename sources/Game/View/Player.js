@@ -1,10 +1,10 @@
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import Game from '@/Game.js'
 import View from '@/View/View.js'
 import Debug from '@/Debug/Debug.js'
 import State from '@/State/State.js'
-import PlayerMaterial from './Materials/PlayerMaterial.js'
 
 export default class Player
 {
@@ -30,27 +30,50 @@ export default class Player
     
     setHelper()
     {
-        this.helper = new THREE.Mesh()
-        this.helper.material = new PlayerMaterial()
-        this.helper.material.uniforms.uColor.value = new THREE.Color('#fff8d6')
-        this.helper.material.uniforms.uSunPosition.value = new THREE.Vector3(- 0.5, - 0.5, - 0.5)
-
-        this.helper.geometry = new THREE.CapsuleGeometry(0.5, 0.8, 3, 16),
-        this.helper.geometry.translate(0, 0.9, 0)
-        this.group.add(this.helper)
-
-        // const arrow = new THREE.Mesh(
-        //     new THREE.ConeGeometry(0.2, 0.2, 4),
-        //     new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: false })
-        // )
-        // arrow.rotation.x = - Math.PI * 0.5
-        // arrow.position.y = 1.5
-        // arrow.position.z = - 0.5
-        // this.helper.add(arrow)
-        
-        // // Axis helper
-        // this.axisHelper = new THREE.AxesHelper(3)
-        // this.group.add(this.axisHelper)
+        // Load car model from GLB file
+        const loader = new GLTFLoader()
+        loader.load(
+            '/models/sports-car.glb',
+            (gltf) => {
+                // Get the loaded model
+                const model = gltf.scene
+                
+                // Calculate bounding box for auto-scaling
+                const box = new THREE.Box3().setFromObject(model)
+                const size = box.getSize(new THREE.Vector3())
+                
+                // Auto-scale to fit target size (roughly 1.5 units for largest dimension)
+                const targetSize = 1.5
+                const maxDimension = Math.max(size.x, size.y, size.z)
+                const scale = targetSize / maxDimension
+                model.scale.set(scale, scale, scale)
+                
+                // Recalculate bounding box after scaling
+                box.setFromObject(model)
+                const minY = box.min.y
+                
+                // Position model so bottom sits on ground
+                model.position.y = -minY
+                
+                // Store reference and add to scene
+                this.helper = model
+                this.group.add(this.helper)
+                
+                console.log('Car model loaded successfully')
+            },
+            (progress) => {
+                // Optional: track loading progress
+            },
+            (error) => {
+                console.error('Failed to load car model:', error)
+                // Fallback: create a simple box as placeholder
+                const fallbackGeometry = new THREE.BoxGeometry(1, 0.8, 2)
+                const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 })
+                this.helper = new THREE.Mesh(fallbackGeometry, fallbackMaterial)
+                this.helper.position.y = 0.4
+                this.group.add(this.helper)
+            }
+        )
     }
 
     setDebug()
@@ -58,10 +81,9 @@ export default class Player
         if(!this.debug.active)
             return
 
-        // Sphere
-        const playerFolder = this.debug.ui.getFolder('view/player')
-
-        playerFolder.addColor(this.helper.material.uniforms.uColor, 'value')
+        // Color picker removed since car uses original materials
+        // const playerFolder = this.debug.ui.getFolder('view/player')
+        // playerFolder.addColor(this.helper.material.uniforms.uColor, 'value')
     }
 
 
@@ -76,8 +98,9 @@ export default class Player
             playerState.position.current[2]
         )
         
-        // Helper
-        this.helper.rotation.y = playerState.rotation
-        this.helper.material.uniforms.uSunPosition.value.set(sunState.position.x, sunState.position.y, sunState.position.z)
+        // Helper - only update rotation if model is loaded
+        if (this.helper) {
+            this.helper.rotation.y = playerState.rotation
+        }
     }
 }
