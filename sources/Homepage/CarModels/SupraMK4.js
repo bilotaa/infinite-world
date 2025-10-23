@@ -1,6 +1,11 @@
 import * as THREE from 'three'
 
 /**
+ * FALLBACK MODEL - Used if GLB fails to load
+ * Primary model loaded from: /models/supra-mk4.glb via ModelLoader.js
+ */
+
+/**
  * Creates a Toyota Supra MK4 3D model using Three.js geometries
  * Distinctive features: Low profile, long hood, rounded rear spoiler
  * Returns a Three.js Group containing the complete car model
