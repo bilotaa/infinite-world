@@ -20,14 +20,14 @@ varying vec3 vColor;
 #include ../partials/getGrassAttenuation.glsl;
 
 // Road visual constants
-const vec3 ROAD_COLOR = vec3(0.35, 0.35, 0.35);        // Medium grey
-const vec3 LINE_COLOR = vec3(1.0, 1.0, 1.0);           // White
-const float ROAD_HALF_WIDTH = 8.0;                      // Half width of road (doubled)
-const float CENTER_LINE_WIDTH = 0.25;                   // Wider for sharper look
-const float EDGE_LINE_WIDTH = 0.2;                      // Wider for sharper look
-const float DASH_LENGTH = 3.0;
+const vec3 ROAD_COLOR = vec3(0.4, 0.4, 0.4);            // Lighter grey for better visibility
+const vec3 LINE_COLOR = vec3(1.0, 1.0, 1.0);            // Pure white
+const float ROAD_HALF_WIDTH = 8.0;                       // Half width of road (doubled)
+const float CENTER_LINE_WIDTH = 0.4;                     // Much wider center line
+const float EDGE_LINE_WIDTH = 0.35;                      // Much wider edge lines
+const float DASH_LENGTH = 4.0;                           // Longer dashes
 const float DASH_GAP = 2.0;
-const float EDGE_LINE_POSITION = 7.5;                   // Distance from center (adjusted for wider road)
+const float EDGE_LINE_POSITION = 7.5;                    // Distance from center (adjusted for wider road)
 const float ROAD_CENTER_X = 0.0;
 const float ROAD_SMOOTH_WIDTH = 4.0;
 
@@ -58,28 +58,24 @@ float getRoadLaneMarking(vec3 worldPos) {
     
     float marking = 0.0;
     
-    // Center dashed line (at x=0)
+    // Center dashed line (at x=0) - using step for sharp edges
     float distFromCenter = abs(x);
-    if (distFromCenter < CENTER_LINE_WIDTH * 0.5) {
-        // Calculate dash pattern using Z position
-        float dashCycle = DASH_LENGTH + DASH_GAP;
-        float zMod = mod(z, dashCycle);
-        if (zMod < DASH_LENGTH) {
-            marking = 1.0;
-        }
-    }
+    float centerLineCheck = step(distFromCenter, CENTER_LINE_WIDTH * 0.5);
     
-    // Left edge line (at x=-3.8)
+    // Dash pattern
+    float dashCycle = DASH_LENGTH + DASH_GAP;
+    float zMod = mod(z, dashCycle);
+    float dashCheck = step(zMod, DASH_LENGTH);
+    
+    marking = max(marking, centerLineCheck * dashCheck);
+    
+    // Left edge line (at x=-3.8) - sharp edges
     float distFromLeftEdge = abs(x + EDGE_LINE_POSITION);
-    if (distFromLeftEdge < EDGE_LINE_WIDTH * 0.5) {
-        marking = 1.0;
-    }
+    marking = max(marking, step(distFromLeftEdge, EDGE_LINE_WIDTH * 0.5));
     
-    // Right edge line (at x=+3.8)
+    // Right edge line (at x=+3.8) - sharp edges
     float distFromRightEdge = abs(x - EDGE_LINE_POSITION);
-    if (distFromRightEdge < EDGE_LINE_WIDTH * 0.5) {
-        marking = 1.0;
-    }
+    marking = max(marking, step(distFromRightEdge, EDGE_LINE_WIDTH * 0.5));
     
     return marking;
 }
