@@ -142,9 +142,13 @@ void main()
     float sunShade = getSunShade(normal);
     color = getSunShadeColor(color, sunShade);
 
-    // Sun reflection
+    // Sun reflection (reduce on steep slopes to prevent neon artifacts)
     float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
+    sunReflection *= (1.0 - slope);  // Reduce on steep slopes
     color = getSunReflectionColor(color, sunReflection);
+    
+    // Clamp to prevent neon artifacts
+    color = clamp(color, vec3(0.0), vec3(1.0));
 
     vColor = color;
     // vColor = vec3(slope);
