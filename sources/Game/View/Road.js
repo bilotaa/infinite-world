@@ -20,9 +20,23 @@ export default class Road
         this.roadSegments = 200
         this.chunkSize = this.state.chunks.minSize
 
+        // Road curve parameters
+        this.curveAmplitude = 40.0     // How far road curves left/right
+        this.curveFrequency = 0.008     // How often turns happen
+        this.curveFrequency2 = 0.003    // Secondary frequency for variety
+
         this.setGeometry()
         this.setMaterial()
         this.setMesh()
+    }
+
+    // Calculate road center X position for any Z position
+    getRoadCenterX(z)
+    {
+        // Combine multiple sine waves for natural-looking curves
+        const curve1 = Math.sin(z * this.curveFrequency) * this.curveAmplitude
+        const curve2 = Math.sin(z * this.curveFrequency2) * this.curveAmplitude * 0.5
+        return curve1 + curve2
     }
 
     setGeometry()
