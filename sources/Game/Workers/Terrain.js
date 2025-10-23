@@ -454,9 +454,7 @@ onmessage = function(event)
             texture[iTextureStride    ] = normals[iNormalStride    ]
             texture[iTextureStride + 1] = normals[iNormalStride + 1]
             texture[iTextureStride + 2] = normals[iNormalStride + 2]
-            // Calculate road influence for this vertex position
-            const roadInfluence = getRoadInfluence(position[0], position[2])
-            texture[iTextureStride + 3] = roadInfluence  // Store road influence (0.0 to 1.0)
+            texture[iTextureStride + 3] = position[1]
         }
     }
 
