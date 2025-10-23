@@ -128,6 +128,7 @@ export default class Grass
             this.material
         )
         this.mesh.frustumCulled = false
+        this.mesh.visible = false  // Hide until terrain data is ready
         this.scene.add(this.mesh)
     }
 
@@ -150,6 +151,9 @@ export default class Grass
 
         if(aChunkState && aChunkState.terrain && aChunkState.terrain.renderInstance.texture)
         {
+            // Show grass once terrain data is available
+            this.mesh.visible = true
+            
             // Texture A
             this.material.uniforms.uTerrainATexture.value = aChunkState.terrain.renderInstance.texture
             this.material.uniforms.uTerrainAOffset.value.set(
