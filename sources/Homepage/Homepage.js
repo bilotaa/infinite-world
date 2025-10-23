@@ -159,6 +159,9 @@ export default class Homepage {
             // Hide overlay completely
             this.overlay.style.display = 'none'
 
+            // Activate game container (make it interactive)
+            document.querySelector('.game').classList.add('active')
+
             // Dispose of Three.js resources
             this.carPreviews.forEach(preview => preview.dispose())
 
