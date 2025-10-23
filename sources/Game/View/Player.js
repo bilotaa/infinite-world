@@ -195,8 +195,9 @@ export default class Player
         // Add truck to group
         this.group.add(this.helper)
         
-        // Store previous rotation for tilt animation
+        // Store previous rotation and current tilt for smooth animation
         this.previousRotation = 0
+        this.currentTilt = 0
         
         console.log('Tesla Cybertruck created successfully')
     }
@@ -221,17 +222,34 @@ export default class Player
             playerState.position.current[2]
         )
         
-        // Helper - update rotation with tilt effect for driving feel
+        // Helper - update rotation with smooth tilt effect
         if (this.helper) {
-            // Calculate rotation difference for tilt effect
-            const rotationDiff = playerState.rotation - this.previousRotation
+            // Initialize previousRotation on first frame
+            if (this.previousRotation === 0) {
+                this.previousRotation = playerState.rotation
+            }
+            
+            // Calculate rotation difference and normalize to -π to π range
+            let rotationDiff = playerState.rotation - this.previousRotation
+            
+            // Handle angle wrapping (when going from 2π to 0 or vice versa)
+            if (rotationDiff > Math.PI) {
+                rotationDiff -= Math.PI * 2
+            } else if (rotationDiff < -Math.PI) {
+                rotationDiff += Math.PI * 2
+            }
             
             // Apply main rotation
             this.helper.rotation.y = playerState.rotation
             
-            // Add subtle tilt when turning (lean into turns like a real vehicle)
-            const tiltAmount = Math.max(-0.08, Math.min(0.08, rotationDiff * 2))
-            this.helper.rotation.z = -tiltAmount
+            // Calculate target tilt based on turn rate (reduced sensitivity)
+            const targetTilt = Math.max(-0.05, Math.min(0.05, -rotationDiff * 3))
+            
+            // Smoothly interpolate current tilt towards target (lerp)
+            this.currentTilt += (targetTilt - this.currentTilt) * 0.15
+            
+            // Apply smooth tilt
+            this.helper.rotation.z = this.currentTilt
             
             // Store current rotation for next frame
             this.previousRotation = playerState.rotation
