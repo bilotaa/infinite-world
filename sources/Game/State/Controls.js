@@ -33,48 +33,24 @@ export default class Controls
         // Map
         this.keys.map = [
             {
-                codes: [ 'ArrowUp', 'KeyW' ],
+                codes: [ 'KeyW' ],
                 name: 'forward'
             },
             {
-                codes: [ 'ArrowRight', 'KeyD' ],
+                codes: [ 'KeyD' ],
                 name: 'strafeRight'
             },
             {
-                codes: [ 'ArrowDown', 'KeyS' ],
+                codes: [ 'KeyS' ],
                 name: 'backward'
             },
             {
-                codes: [ 'ArrowLeft', 'KeyA' ],
+                codes: [ 'KeyA' ],
                 name: 'strafeLeft'
-            },
-            {
-                codes: [ 'ShiftLeft', 'ShiftRight' ],
-                name: 'boost'
-            },
-            {
-                codes: [ 'KeyP' ],
-                name: 'pointerLock'
-            },
-            {
-                codes: [ 'KeyV' ],
-                name: 'cameraMode'
-            },
-            {
-                codes: [ 'KeyB' ],
-                name: 'debug'
             },
             {
                 codes: [ 'KeyF' ],
                 name: 'fullscreen'
-            },
-            {
-                codes: [ 'Space' ],
-                name: 'jump'
-            },
-            {
-                codes: [ 'ControlLeft', 'KeyC' ],
-                name: 'crouch'
             },
         ]
 
