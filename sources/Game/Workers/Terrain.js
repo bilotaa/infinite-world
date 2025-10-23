@@ -13,22 +13,16 @@ const smoothStep = (edge0, edge1, x) => {
     return t * t * (3 - 2 * t)
 }
 
-// Road configuration
+// Road configuration - ENDLESS ROAD
 const ROAD_WIDTH = 8.0           // Width of the road
 const ROAD_SMOOTH_WIDTH = 4.0    // Additional width for smooth blending
 const ROAD_HEIGHT = 0.5          // Height of the road surface
 const ROAD_CENTER_X = 0.0        // Road runs along X=0
-const ROAD_START_Z = -50.0       // Road starts at Z=-50
-const ROAD_END_Z = 100.0         // Road ends at Z=100
 
 // Check if a point is on or near the road
 const getRoadInfluence = (x, z) => {
     // Road runs along the Z axis at X = ROAD_CENTER_X
-    // Only exists between ROAD_START_Z and ROAD_END_Z
-    
-    if (z < ROAD_START_Z || z > ROAD_END_Z) {
-        return 0.0 // Outside road bounds
-    }
+    // ENDLESS - no Z bounds, road goes forever
     
     const distanceFromRoadCenter = Math.abs(x - ROAD_CENTER_X)
     const halfRoadWidth = ROAD_WIDTH / 2.0

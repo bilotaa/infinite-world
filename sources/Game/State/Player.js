@@ -69,7 +69,7 @@ export default class Player
         this.previousVelocity = vec3.create()
 
         this.position = {}
-        this.position.current = vec3.fromValues(10, 0, 1)
+        this.position.current = vec3.fromValues(0, 0, 1)  // Spawn on road (X=0 is road center)
         this.position.previous = vec3.clone(this.position.current)
         this.position.delta = vec3.create()
 
