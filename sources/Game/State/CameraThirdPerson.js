@@ -16,16 +16,26 @@ export default class CameraThirdPerson
         this.gameUp = vec3.fromValues(0, 1, 0)
         this.position = vec3.create()
         this.quaternion = quat2.create()
-        this.distance = 15
-        this.phi = Math.PI * 0.45
-        this.theta = - Math.PI * 0.25
-        this.aboveOffset = 2
+        
+        // Racing game camera settings
+        this.distance = 12              // Distance behind car
+        this.height = 4                 // Height above car
+        this.aboveOffset = 1.5          // Look at point offset
+        this.smoothness = 0.1           // Camera smoothing (lower = smoother)
+        
+        // Fixed angle for racing game (behind the car)
+        this.phi = Math.PI * 0.4        // Slightly elevated view
+        this.theta = 0                  // Directly behind (along Z-axis)
         this.phiLimits = { min: 0.1, max: Math.PI - 0.1 }
     }
 
     activate()
     {
         this.active = true
+        // Initialize camera position to avoid snap
+        vec3.copy(this.position, this.player.position.current)
+        this.position[1] += this.height
+        this.position[2] += this.distance
     }
 
     deactivate()
@@ -38,29 +48,18 @@ export default class CameraThirdPerson
         if(!this.active)
             return
 
-        // Phi and theta
-        if(this.controls.pointer.down || this.viewport.pointerLock.active)
-        {
-            const normalisedPointer = this.viewport.normalise(this.controls.pointer.delta)
-            this.phi -= normalisedPointer.y * 2
-            this.theta -= normalisedPointer.x * 2
-
-            if(this.phi < this.phiLimits.min)
-                this.phi = this.phiLimits.min
-            if(this.phi > this.phiLimits.max)
-                this.phi = this.phiLimits.max
-        }
-        
-        // Position
-        const sinPhiRadius = Math.sin(this.phi) * this.distance
-        const sphericalPosition = vec3.fromValues(
-            sinPhiRadius * Math.sin(this.theta),
-            Math.cos(this.phi) * this.distance,
-            sinPhiRadius * Math.cos(this.theta)
+        // Racing game camera: fixed behind the car
+        // Calculate ideal camera position behind the car
+        const idealPosition = vec3.fromValues(
+            this.player.position.current[0],              // Same X as car (centered on road)
+            this.player.position.current[1] + this.height, // Fixed height above car
+            this.player.position.current[2] + this.distance // Behind the car
         )
-        vec3.add(this.position, this.player.position.current, sphericalPosition)
+        
+        // Smooth camera movement (lerp towards ideal position)
+        vec3.lerp(this.position, this.position, idealPosition, this.smoothness)
 
-        // Target
+        // Target (look at car)
         const target = vec3.fromValues(
             this.player.position.current[0],
             this.player.position.current[1] + this.aboveOffset,

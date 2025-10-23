@@ -14,7 +14,7 @@ const smoothStep = (edge0, edge1, x) => {
 }
 
 // Road configuration - ENDLESS ROAD
-const ROAD_WIDTH = 8.0           // Width of the road
+const ROAD_WIDTH = 16.0          // Width of the road (doubled for wider road)
 const ROAD_SMOOTH_WIDTH = 4.0    // Additional width for smooth blending
 const ROAD_HEIGHT = 0.5          // Height of the road surface
 const ROAD_CENTER_X = 0.0        // Road runs along X=0

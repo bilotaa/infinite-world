@@ -35,7 +35,7 @@ varying vec3 vColor;
 
 // Road configuration - matches terrain shader
 const float ROAD_CENTER_X = 0.0;
-const float ROAD_HALF_WIDTH = 4.0;
+const float ROAD_HALF_WIDTH = 8.0;                      // Half width of road (doubled)
 const float ROAD_SMOOTH_WIDTH = 4.0;
 
 float smoothStepCustom(float edge0, float edge1, float x) {
