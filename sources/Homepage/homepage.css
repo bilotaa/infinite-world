@@ -464,8 +464,17 @@
     height: 100vh;
     z-index: 2000;
     
-    /* Simple dark background - different from homepage */
-    background: #0a0a0a;
+    /* Concrete wall background with dark overlay */
+    background: 
+        linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.7) 0%,
+            rgba(0, 0, 0, 0.6) 100%
+        ),
+        url('/images/concrete-wall-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     
     display: flex;
     flex-direction: column;
