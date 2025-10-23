@@ -100,9 +100,6 @@ void main()
     float normalZ = terrainData.b;
     float normalY = sqrt(max(0.0, 1.0 - normalX * normalX - normalZ * normalZ));
     vec3 normal = vec3(normalX, normalY, normalZ);
-    
-    // Calculate road influence from world position
-    float roadInfluence = getRoadInfluence(modelPosition.x);
 
     // Slope
     float slope = 1.0 - abs(dot(vec3(0.0, 1.0, 0.0), normal));
