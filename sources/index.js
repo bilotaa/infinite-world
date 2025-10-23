@@ -1,5 +1,5 @@
 import Game from '@/Game.js'
-import Homepage from '@/Homepage/Homepage.js'
+import Homepage from './Homepage/Homepage.js'
 
 // Initialize homepage first
 const homepage = new Homepage()
