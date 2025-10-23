@@ -1,7 +1,6 @@
 import CarPreview from './CarPreview.js'
-import { createCybertruckModel } from './CarModels/Cybertruck.js'
-import { createSupraMK4Model } from './CarModels/SupraMK4.js'
-import { createLamborghiniModel } from './CarModels/Lamborghini.js'
+import LoadingScreen from './LoadingScreen.js'
+import ModelLoader from './ModelLoader.js'
 
 /**
  * Homepage - Main controller for the game homepage overlay
@@ -14,14 +13,51 @@ export default class Homepage {
         this.onStartCallback = null
 
         this.cars = [
-            { id: 'cybertruck', name: 'Cybertruck', modelFn: createCybertruckModel },
-            { id: 'supra', name: 'Supra MK4', modelFn: createSupraMK4Model },
-            { id: 'lamborghini', name: 'Lamborghini', modelFn: createLamborghiniModel }
+            { id: 'cybertruck', name: 'Cybertruck' },
+            { id: 'supra', name: 'Supra MK4' },
+            { id: 'lamborghini', name: 'Lamborghini' }
         ]
 
         this.carPreviews = []
 
-        this.init()
+        // Show loading screen and preload models before initializing
+        this.loadingScreen = new LoadingScreen()
+        this.loadingScreen.show()
+
+        // Start preloading process
+        this.preloadAndInit()
+    }
+
+    async preloadAndInit() {
+        const modelLoader = ModelLoader.getInstance()
+        
+        try {
+            // Preload all models with progress updates
+            await modelLoader.preloadAllModels((percentage, currentItem) => {
+                this.loadingScreen.updateProgress(percentage, currentItem)
+            })
+            
+            // Models loaded successfully
+            this.loadingScreen.hide()
+            
+            // Wait for fade out (0.5s), then show homepage and initialize
+            setTimeout(() => {
+                // Show homepage overlay
+                document.querySelector('.homepage-overlay').style.display = 'flex'
+                
+                // Initialize homepage interactivity
+                this.init()
+            }, 500)
+            
+        } catch (error) {
+            console.error('Model loading failed:', error)
+            // Still proceed with fallback models
+            this.loadingScreen.hide()
+            setTimeout(() => {
+                document.querySelector('.homepage-overlay').style.display = 'flex'
+                this.init()
+            }, 500)
+        }
     }
 
     init() {
@@ -48,9 +84,11 @@ export default class Homepage {
     }
 
     setupCarPreviews() {
+        const modelLoader = ModelLoader.getInstance()
+        
         this.cars.forEach((car, index) => {
             const container = this.carContainers[index]
-            const carModel = car.modelFn()
+            const carModel = modelLoader.getModel(car.id)
             const preview = new CarPreview(container, carModel, car.name)
 
             this.carPreviews.push(preview)
