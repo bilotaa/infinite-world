@@ -60,8 +60,8 @@ export default class Terrain
                 THREE.UVMapping,
                 THREE.ClampToEdgeWrapping,
                 THREE.ClampToEdgeWrapping,
-                THREE.LinearFilter,
-                THREE.LinearFilter
+                THREE.NearestFilter,  // Changed from LinearFilter for sharp pixels
+                THREE.NearestFilter   // Changed from LinearFilter for sharp pixels
             )
             this.texture.flipY = false
             this.texture.needsUpdate = true
@@ -73,6 +73,8 @@ export default class Terrain
             // Create mesh
             this.mesh = new THREE.Mesh(this.geometry, this.terrains.material)
             this.mesh.userData.texture = this.texture
+            this.mesh.frustumCulled = false  // Always render, no culling issues
+            this.mesh.visible = true          // Ensure visible from start
             // this.mesh = new THREE.Mesh(this.geometry, new THREE.MeshNormalMaterial())
             this.scene.add(this.mesh)
             
