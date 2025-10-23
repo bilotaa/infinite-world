@@ -23,14 +23,12 @@
             rgba(40, 45, 50, 0.3) 0%,
             transparent 50%,
             rgba(40, 45, 50, 0.3) 100%
-        );
+        ),
+        url('/images/concrete-parking-bg.jpg');
     background-color: #1a1f24;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-
-    /* Add background image URL if available */
-    /* background-image: url('/images/parking-bg.jpg'); */
 
     display: flex;
     flex-direction: column;
