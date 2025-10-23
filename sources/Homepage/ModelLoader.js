@@ -123,18 +123,20 @@ export default class ModelLoader {
                     const center = new THREE.Vector3()
                     box.getCenter(center)
                     
-                    // Move model so bottom is at y=0 and centered on x/z
+                    // Move model so it's elevated above ground
+                    // Lift by 50% of model height to ensure only tires touch ground/grass
                     model.position.x = -center.x
-                    model.position.y = -box.min.y // Bottom touches ground
+                    model.position.y = -box.min.y + (size.y * 0.5) // Lift up significantly
                     model.position.z = -center.z
                     
                     console.log(`[ModelLoader] Model positioned at:`, {
                         x: model.position.x.toFixed(2),
                         y: model.position.y.toFixed(2),
-                        z: model.position.z.toFixed(2)
+                        z: model.position.z.toFixed(2),
+                        heightOffset: (size.y * 0.5).toFixed(2)
                     })
                     
-                    // Configure model properties
+                    // Configure model properties and fix materials
                     let meshCount = 0
                     model.traverse((child) => {
                         if (child.isMesh) {
@@ -142,9 +144,27 @@ export default class ModelLoader {
                             child.castShadow = true
                             child.receiveShadow = true
                             
-                            // Ensure materials are visible
+                            // Fix materials to prevent black appearance
                             if (child.material) {
+                                // Clone material to avoid affecting other instances
+                                child.material = child.material.clone()
+                                
+                                // Ensure proper lighting response
                                 child.material.needsUpdate = true
+                                
+                                // Add slight emissive to prevent complete darkness
+                                if (child.material.color) {
+                                    child.material.emissive = child.material.color.clone()
+                                    child.material.emissiveIntensity = 0.15
+                                }
+                                
+                                // Adjust metalness/roughness for better visibility
+                                if (child.material.metalness !== undefined) {
+                                    child.material.metalness = Math.min(0.7, child.material.metalness)
+                                }
+                                if (child.material.roughness !== undefined) {
+                                    child.material.roughness = Math.max(0.3, child.material.roughness)
+                                }
                             }
                         }
                     })
