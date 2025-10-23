@@ -4,6 +4,7 @@ import Grass from './Grass.js'
 import Noises from './Noises.js'
 import Player from './Player.js'
 import Renderer from './Renderer.js'
+import Road from './Road.js'
 import Sky from './Sky.js'
 import Terrains from './Terrains.js'
 import Water from './Water.js'
@@ -37,6 +38,7 @@ export default class View
         this.chunks = new Chunks()
         this.player = new Player()
         this.grass = new Grass()
+        this.road = new Road()
     }
 
     resize()
@@ -55,6 +57,7 @@ export default class View
         this.chunks.update()
         this.player.update()
         this.grass.update()
+        this.road.update()
         this.camera.update()
         this.renderer.update()
     }
