@@ -18,8 +18,8 @@ export default class Trees
         this.noises = this.view.noises
 
         // Tree configuration
-        this.treeCount = 150  // Number of trees
-        this.spawnRadius = 100 // Spawn trees within this radius
+        this.treeCount = 80  // Number of trees (reduced for realism)
+        this.spawnRadius = 120 // Spawn trees within this radius (increased spread)
         this.noiseTexture = this.noises.create(128, 128)
 
         this.setGeometry()
