@@ -32,6 +32,8 @@ varying vec3 vColor;
 #include ../partials/getSunReflectionColor.glsl;
 #include ../partials/getGrassAttenuation.glsl;
 #include ../partials/getRotatePivot2d.glsl;
+#include ../partials/getFogColor.glsl;
+#include ../partials/getAmbientOcclusion.glsl;
 
 // Road configuration - matches terrain shader
 const float ROAD_CENTER_X = 0.0;
@@ -197,10 +199,31 @@ void main()
     float sunShade = getSunShade(normal);
     color = getSunShadeColor(color, sunShade);
 
+    // Ambient occlusion
+    float ao = getAmbientOcclusion(normal);
+    color *= ao;
+
     // Sun reflection (reduce on steep slopes to prevent neon artifacts)
     float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
     sunReflection *= (1.0 - slope);  // Reduce on steep slopes
     color = getSunReflectionColor(color, sunReflection);
+    
+    // Subsurface scattering - grass glows when backlit
+    float backlight = dot(normal, -uSunPosition);
+    if (backlight < 0.0) {
+        float subsurfaceStrength = -backlight * 0.4 * tipness;
+        vec3 subsurfaceColor = vec3(1.0, 0.95, 0.6);
+        color += subsurfaceColor * subsurfaceStrength;
+    }
+    
+    // Fog
+    float depth = -viewPosition.z;
+    vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
+    color = getFogColor(color, depth, screenUv);
+    
+    // Boost color saturation for vibrancy
+    float luminance = dot(color, vec3(0.299, 0.587, 0.114));
+    color = luminance + (color - luminance) * 1.25;
     
     // Clamp to prevent neon artifacts
     color = clamp(color, vec3(0.0), vec3(1.0));
