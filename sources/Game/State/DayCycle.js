@@ -10,9 +10,9 @@ export default class DayCycle
         this.state = State.getInstance()
         this.debug = Debug.getInstance()
 
-        this.autoUpdate = false  // Disable day/night cycle
-        this.timeProgress = 0.3
-        this.progress = 0.3      // Fixed to midday (0.3 = bright daylight)
+        this.autoUpdate = true
+        this.timeProgress = 0
+        this.progress = 0
         this.duration = 15 // Seconds
 
         this.setDebug()
