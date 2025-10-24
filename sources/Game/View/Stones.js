@@ -18,7 +18,7 @@ export default class Stones
         this.noises = this.view.noises
 
         // Stone configuration
-        this.stoneCount = 200  // Lots of stones everywhere
+        this.stoneCount = 120  // Reduced for better performance (was 200)
         this.spawnRadius = 150 // Wide distribution
         this.noiseTexture = this.noises.create(128, 128)
 
