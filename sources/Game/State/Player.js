@@ -262,7 +262,7 @@ export default class Player
         // Calculate G-Forces (for visual effects)
         const velocityChange = vec3.create()
         vec3.sub(velocityChange, this.velocity, this.previousVelocity)
-        vec3.scale(velocityChange, velocityChange, 1 / (delta || 0.016))
+        vec3.scale(velocityChange, velocityChange, 1 / Math.max(delta, 0.016))
         
         this.gForce.x = velocityChange[0] * 0.1 // Lateral G
         this.gForce.z = velocityChange[2] * 0.1 // Longitudinal G
