@@ -15,7 +15,7 @@ void main()
     // Sun lighting (diffuse)
     float sunDot = dot(normal, -uSunPosition);
     float sunShade = sunDot * 0.5 + 0.5;
-    sunShade = sunShade * 0.6 + 0.4;  // Very soft shadows (game-style)
+    sunShade = sunShade * 0.65 + 0.35;  // Natural shadows
 
     // Apply sun shading
     color *= sunShade;
@@ -24,8 +24,8 @@ void main()
     float skyLight = (normal.y * 0.5 + 0.5) * 0.25;
     color += vec3(0.38, 0.44, 0.56) * skyLight;
 
-    // High ambient boost (game-style bright)
-    color *= 1.6;
+    // Natural ambient boost
+    color *= 1.3;
 
     // Rim lighting (subtle)
     vec3 viewDir = normalize(cameraPosition - vWorldPosition);
@@ -33,14 +33,14 @@ void main()
     rim = pow(rim, 3.0);
     color += vec3(0.65, 0.70, 0.80) * rim * 0.06;
 
-    // Add bright moss tint on top surfaces (bright green for game-style)
+    // Add natural moss tint on top surfaces
     float upFacing = max(0.0, normal.y);
-    vec3 mossColor = vec3(0.45, 0.60, 0.35);  // Brighter lime-green moss
+    vec3 mossColor = vec3(0.22, 0.32, 0.20);  // Natural dark moss
     color = mix(color, color * 0.7 + mossColor * 0.3, upFacing * 0.15);
 
-    // Boost saturation for vibrant game look
+    // Subtle saturation (natural)
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.15;
+    color = luminance + (color - luminance) * 1.05;
 
     // Clamp
     color = clamp(color, vec3(0.0), vec3(1.0));
