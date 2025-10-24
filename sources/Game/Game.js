@@ -22,6 +22,9 @@ export default class Game
         this.username = options.username || 'Player'
         this.selectedCar = options.carId || 'cybertruck'
 
+        // Create game DOM element for renderer attachment
+        this.domElement = document.querySelector('.game') || document.body
+
         this.seed = 'p'
         this.debug = new Debug()
         this.state = new State({ username: this.username, carId: this.selectedCar })
