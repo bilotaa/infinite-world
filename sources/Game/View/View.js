@@ -4,6 +4,7 @@ import Grass from './Grass.js'
 import Noises from './Noises.js'
 import Player from './Player.js'
 import Renderer from './Renderer.js'
+import Road from './Road.js'
 import Sky from './Sky.js'
 import Terrains from './Terrains.js'
 import Water from './Water.js'
@@ -27,7 +28,7 @@ export default class View
         View.instance = this
 
         this.scene = new THREE.Scene()
-        
+
         this.camera = new Camera()
         this.renderer = new Renderer()
         this.noises = new Noises()
@@ -35,6 +36,7 @@ export default class View
         this.water = new Water()
         this.terrains = new Terrains()
         this.chunks = new Chunks()
+        this.road = new Road()
         this.player = new Player()
         this.grass = new Grass()
     }
@@ -53,6 +55,7 @@ export default class View
         this.water.update()
         this.terrains.update()
         this.chunks.update()
+        this.road.update()
         this.player.update()
         this.grass.update()
         this.camera.update()
