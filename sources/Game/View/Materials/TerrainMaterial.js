@@ -10,6 +10,7 @@ export default function TerrainMaterial()
         {
             uPlayerPosition: { value: null },
             uGradientTexture: { value: null },
+            uNoiseTexture: { value: null },
             uLightnessSmoothness: { value: null },
             uFresnelOffset: { value: null },
             uFresnelScale: { value: null },
