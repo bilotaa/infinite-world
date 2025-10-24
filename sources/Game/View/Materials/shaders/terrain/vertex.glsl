@@ -21,24 +21,12 @@ varying vec3 vColor;
 #include ../partials/getFogColor.glsl;
 #include ../partials/getGrassAttenuation.glsl;
 
-// Road visual constants
-const vec3 ROAD_COLOR = vec3(0.6, 0.6, 0.6);
-const vec3 LINE_COLOR = vec3(1.0, 1.0, 1.0);
-const float ROAD_HALF_WIDTH = 8.0;
-const float CENTER_LINE_WIDTH = 1.0;
-const float EDGE_LINE_WIDTH = 0.8;
-const float DASH_LENGTH = 5.0;
-const float DASH_GAP = 2.0;
-const float EDGE_LINE_POSITION = 7.0;
-const float ROAD_CENTER_X = 0.0;
-const float ROAD_SMOOTH_WIDTH = 0.5;
-
-// ALL GRASS TERRAIN COLORS
-const vec3 GRASS_RICH = vec3(0.55, 0.75, 0.35);        // Bright lime green
-const vec3 GRASS_MEADOW = vec3(0.60, 0.80, 0.40);      // Even brighter
-const vec3 GRASS_DRY = vec3(0.58, 0.78, 0.38);         // Lime tint
-const vec3 DIRT_RICH = vec3(0.50, 0.45, 0.30);         // Lighter dirt
-const vec3 DIRT_DRY = vec3(0.55, 0.50, 0.35);          // Bright dry dirt
+// REALISTIC NATURAL TERRAIN COLORS (original style)
+const vec3 GRASS_RICH = vec3(0.28, 0.42, 0.20);        // Rich dark grass
+const vec3 GRASS_MEADOW = vec3(0.35, 0.50, 0.24);      // Meadow grass
+const vec3 GRASS_DRY = vec3(0.40, 0.48, 0.22);         // Dry grass
+const vec3 DIRT_RICH = vec3(0.35, 0.28, 0.20);         // Dark rich soil
+const vec3 DIRT_DRY = vec3(0.45, 0.38, 0.28);          // Dry dirt
 
 float smoothStep(float edge0, float edge1, float x) {
     float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
@@ -141,18 +129,14 @@ void main()
 
     vec3 baseColor = mix(terrainColor * 0.90, terrainColor, 1.0 - grassAttenuation);
 
-    // ============= ROAD SYSTEM =============
-    float roadInfluence = getRoadInfluence(modelPosition.x);
-    vec3 color = mix(baseColor, ROAD_COLOR, roadInfluence);
-
-    float laneMarking = getRoadLaneMarking(modelPosition.xyz);
-    color = mix(color, LINE_COLOR, laneMarking * roadInfluence);
+    // ============= ROAD SYSTEM REMOVED =============
+    vec3 color = baseColor;
 
     // ============= NATURAL LIGHTING =============
 
     // Natural sun lighting
     float sunShade = getSunShade(normal);
-    sunShade = sunShade * 0.50 + 0.50;  // Very soft shadows (game-style)
+    sunShade = sunShade * 0.60 + 0.40;
     color = getSunShadeColor(color, sunShade);
 
     // Sky ambient
@@ -160,8 +144,8 @@ void main()
     vec3 skyColor = vec3(0.40, 0.46, 0.58);
     color += skyColor * skyLight * 0.10;
 
-    // High ambient boost (game-style bright)
-    color = color * 1.8;
+    // Natural ambient boost
+    color = color * 1.25;
 
     // Edge lighting
     float rimLight = pow(1.0 - abs(dot(viewDirection, worldNormal)), 3.5);
@@ -171,12 +155,13 @@ void main()
     float backlight = max(0.0, dot(normal, -uSunPosition));
     color += vec3(0.75, 0.82, 0.58) * backlight * 0.08;
 
-    // No fog for crystal clear view
-    // (removed fog application)
+    // Distance fog (restored)
+    vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
+    color = getFogColor(color, depth, screenUv);
 
-    // Boost saturation for vibrant game look
+    // Subtle saturation (original)
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.3;
+    color = luminance + (color - luminance) * 1.05;
 
     // Final clamp
     color = clamp(color, vec3(0.0), vec3(1.0));
