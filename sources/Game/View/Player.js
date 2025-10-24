@@ -231,17 +231,21 @@ export default class Player
             const turboCharge = playerState.turboCharge || 0
             
             if(turboActive && turboCharge > 0.3) {
-                // Body glow during turbo
-                this.bodyMaterial.emissiveIntensity = 0.3 + turboCharge * 0.4
-                this.bodyMaterial.emissive.setHex(0x6666ff + Math.floor(turboCharge * 0x4400))
+                // Body glow during turbo (only if bodyMaterial exists)
+                if (this.bodyMaterial) {
+                    this.bodyMaterial.emissiveIntensity = 0.3 + turboCharge * 0.4
+                    this.bodyMaterial.emissive.setHex(0x6666ff + Math.floor(turboCharge * 0x4400))
+                }
                 
                 // Exhaust flames
                 this.exhaustMaterial.emissiveIntensity = turboCharge * 3
                 this.exhaustMaterial.opacity = turboCharge * 0.8
             } else {
                 // Normal state
-                this.bodyMaterial.emissiveIntensity = 0.3
-                this.bodyMaterial.emissive.setHex(0x666666)
+                if (this.bodyMaterial) {
+                    this.bodyMaterial.emissiveIntensity = 0.3
+                    this.bodyMaterial.emissive.setHex(0x666666)
+                }
                 this.exhaustMaterial.emissiveIntensity *= 0.9
                 this.exhaustMaterial.opacity *= 0.9
             }
