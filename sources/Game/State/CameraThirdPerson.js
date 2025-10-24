@@ -75,7 +75,7 @@ export default class CameraThirdPerson
         const chunks = this.state.chunks
         const elevation = chunks.getElevationForPosition(this.position[0], this.position[2])
 
-        if(elevation && this.position[1] < elevation + 1)
+        if(elevation !== null && elevation !== undefined && this.position[1] < elevation + 1)
             this.position[1] = elevation + 1
     }
 }
