@@ -167,8 +167,8 @@ export default class Player
         )
         
         // ============= UPDATE HUD DISPLAY =============
-        if(this.speedElement) {
-            const speedKmH = playerState.getSpeedKmH()
+        if(this.speedElement && playerState) {
+            const speedKmH = playerState.getSpeedKmH ? playerState.getSpeedKmH() : 0
             this.speedElement.textContent = speedKmH
             
             // Color change based on speed
@@ -181,17 +181,17 @@ export default class Player
             }
         }
         
-        if(this.gearElement) {
+        if(this.gearElement && playerState) {
             const gear = playerState.currentGear || 1
             this.gearElement.textContent = gear === 0 ? 'R' : gear
         }
         
-        if(this.turboElement) {
+        if(this.turboElement && playerState) {
             const turboPercent = ((playerState.turboCharge || 0) * 100).toFixed(0)
             this.turboElement.style.width = turboPercent + '%'
         }
         
-        if(this.rpmElement) {
+        if(this.rpmElement && playerState) {
             const rpm = Math.round(playerState.engineRPM || 1000)
             this.rpmElement.textContent = rpm + ' RPM'
         }
