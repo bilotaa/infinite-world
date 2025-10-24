@@ -38,11 +38,10 @@ const float ROAD_CENTER_X = 0.0;
 const float ROAD_HALF_WIDTH = 8.0;
 const float ROAD_SMOOTH_WIDTH = 0.5;
 
-// REALISTIC WILDFLOWER COLORS (toned down)
-const vec3 FLOWER_YELLOW = vec3(0.85, 0.75, 0.20);
-const vec3 FLOWER_WHITE = vec3(0.88, 0.86, 0.82);
-const vec3 FLOWER_PURPLE = vec3(0.55, 0.30, 0.60);
-const vec3 FLOWER_PINK = vec3(0.80, 0.50, 0.60);
+// BRIGHT GAME-STYLE GRASS COLORS (like the screenshot)
+const vec3 GRASS_BRIGHT_GREEN = vec3(0.55, 0.75, 0.35);    // Bright lime green
+const vec3 GRASS_VIBRANT = vec3(0.60, 0.80, 0.40);         // Even brighter
+const vec3 GRASS_LIME = vec3(0.58, 0.78, 0.38);            // Lime tint
 
 float smoothStepCustom(float edge0, float edge1, float x) {
     float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
@@ -123,18 +122,13 @@ void main()
     // Tipness
     float tipness = step(2.0, mod(float(gl_VertexID) + 1.0, 3.0));
 
-    // Natural wind system
+    // Natural wind
     vec2 windUV1 = modelPosition.xz * 0.02 + uTime * 0.05;
-    vec2 windUV2 = modelPosition.xz * 0.08 + uTime * 0.03;
     vec4 windNoise1 = texture2D(uNoiseTexture, windUV1);
-    vec4 windNoise2 = texture2D(uNoiseTexture, windUV2);
 
     float windStrength = 0.4;
-    float windX = (windNoise1.x - 0.5) * 0.7 + (windNoise2.x - 0.5) * 0.3;
-    float windZ = (windNoise1.y - 0.5) * 0.7 + (windNoise2.y - 0.5) * 0.3;
-
-    modelPosition.x += windX * tipness * windStrength;
-    modelPosition.z += windZ * tipness * windStrength;
+    modelPosition.x += (windNoise1.x - 0.5) * tipness * windStrength;
+    modelPosition.z += (windNoise1.y - 0.5) * tipness * windStrength;
 
     // Final position
     vec4 viewPosition = viewMatrix * modelPosition;
@@ -144,115 +138,43 @@ void main()
     vec3 worldNormal = normalize(mat3(modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz) * normal);
     vec3 viewNormal = normalize(normalMatrix * normal);
 
-    // ============= NATURAL GRASS COLORS =============
+    // ============= BRIGHT GAME-STYLE GRASS =============
 
     vec2 bladeID = modelCenter.xz * 0.1;
     vec4 bladeNoise = texture2D(uNoiseTexture, bladeID);
 
-    // Wildflowers - only 5% of blades
-    bool isFlower = bladeNoise.r > 0.95;
+    // Bright lime green grass color
+    vec3 baseGrassColor = mix(GRASS_BRIGHT_GREEN, GRASS_VIBRANT, bladeNoise.r);
+    baseGrassColor = mix(baseGrassColor, GRASS_LIME, bladeNoise.g * 0.5);
 
-    // REALISTIC GRASS COLORS (toned down for natural look)
-    vec3 grassBright = vec3(0.38, 0.55, 0.22);
-    vec3 grassMedium = vec3(0.32, 0.48, 0.20);
-    vec3 grassDark = vec3(0.25, 0.40, 0.18);
-    vec3 grassYellow = vec3(0.42, 0.52, 0.24);
-    vec3 grassBlue = vec3(0.30, 0.46, 0.26);
+    // Slight variation
+    baseGrassColor += (bladeNoise.b - 0.5) * 0.03;
 
-    // Select grass color
-    vec3 baseGrassColor;
-    float colorSelector = bladeNoise.g * 5.0;
+    // Base to tip gradient (keep it bright)
+    vec3 baseShade = baseGrassColor * 0.85;
+    vec3 tipShade = baseGrassColor * 1.1;
 
-    if (colorSelector < 1.0) {
-        baseGrassColor = mix(grassMedium, grassBright, fract(colorSelector));
-    } else if (colorSelector < 2.0) {
-        baseGrassColor = mix(grassBright, grassYellow, fract(colorSelector));
-    } else if (colorSelector < 3.0) {
-        baseGrassColor = mix(grassYellow, grassDark, fract(colorSelector));
-    } else if (colorSelector < 4.0) {
-        baseGrassColor = mix(grassDark, grassBlue, fract(colorSelector));
-    } else {
-        baseGrassColor = mix(grassBlue, grassMedium, fract(colorSelector));
-    }
+    vec3 baseColor = mix(baseShade, tipShade, tipness);
 
-    // Subtle variation
-    baseGrassColor += (bladeNoise.b - 0.5) * 0.05;
+    // Very minimal distance fade (keep brightness)
+    vec3 color = mix(baseColor * 0.95, baseColor, 1.0 - scale * 0.3);
 
-    // WILDFLOWERS
-    vec3 flowerColor = FLOWER_YELLOW;
-    if (bladeNoise.b < 0.25) {
-        flowerColor = FLOWER_WHITE;
-    } else if (bladeNoise.b < 0.5) {
-        flowerColor = FLOWER_PURPLE;
-    } else if (bladeNoise.b < 0.75) {
-        flowerColor = FLOWER_PINK;
-    }
+    // ============= BRIGHT GAME LIGHTING =============
 
-    // Base color
-    vec3 baseColor;
-    if (isFlower && tipness > 0.5) {
-        baseColor = flowerColor;
-    } else if (isFlower) {
-        baseColor = grassMedium * 0.85;
-    } else {
-        vec3 baseShade = baseGrassColor * 0.75;
-        vec3 tipShade = baseGrassColor * 1.15;
-
-        if (bladeNoise.g > 0.8) {
-            tipShade += vec3(0.08, 0.06, -0.03);
-        }
-
-        baseColor = mix(baseShade, tipShade, tipness);
-    }
-
-    // Distance fade
-    vec3 shadedColor = baseColor * 0.75;
-    vec3 color = mix(shadedColor, baseColor, 1.0 - scale * 0.4);
-
-    // ============= NATURAL LIGHTING =============
-
-    // Sun lighting
+    // Soft sun lighting
     float sunShade = getSunShade(normal);
-    sunShade = sunShade * 0.65 + 0.35;
+    sunShade = sunShade * 0.5 + 0.5;  // Very soft shadows
     color = getSunShadeColor(color, sunShade);
 
-    // Subtle sky light
-    float skyLight = (normal.y * 0.5 + 0.5) * 0.2;
-    color += vec3(0.45, 0.52, 0.65) * skyLight;
+    // High ambient light (game-style bright)
+    color = color * 1.8;
 
-    // Moderate ambient boost (not too bright)
-    color = color * 1.15;
+    // No fog for crystal clear view
+    // (removed fog application)
 
-    // Subtle subsurface scattering
-    float backlight = dot(normal, -uSunPosition);
-    if (backlight < 0.0 && !isFlower) {
-        float subsurface = -backlight * 0.3 * tipness;
-        color += vec3(0.85, 0.88, 0.55) * subsurface;
-    }
-
-    // Flower glow (subtle)
-    if (isFlower && tipness > 0.5) {
-        float flowerGlow = max(0.0, dot(normal, -uSunPosition)) * 0.2;
-        color += flowerColor * flowerGlow * 0.3;
-    }
-
-    // Subtle rim light
-    float rimLight = pow(1.0 - abs(dot(viewDirection, worldNormal)), 4.0);
-    color += vec3(0.75, 0.80, 0.90) * rimLight * 0.08 * tipness;
-
-    // Very subtle specular
-    float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
-    sunReflection *= tipness * 0.1;
-    color = getSunReflectionColor(color, sunReflection);
-
-    // Fog
-    float depth = -viewPosition.z;
-    vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
-    color = getFogColor(color, depth, screenUv);
-
-    // Subtle color boost (not too much)
+    // Boost saturation for vibrant game look
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.1;
+    color = luminance + (color - luminance) * 1.3;
 
     // Clamp
     color = clamp(color, vec3(0.0), vec3(1.0));
