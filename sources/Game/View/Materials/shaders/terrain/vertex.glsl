@@ -7,8 +7,6 @@ uniform vec3 uSunPosition;
 uniform float uGrassDistance;
 uniform sampler2D uTexture;
 uniform sampler2D uFogTexture;
-uniform sampler2D uGradientTexture;
-uniform sampler2D uNoiseTexture;
 
 varying vec3 vColor;
 
@@ -21,13 +19,6 @@ varying vec3 vColor;
 #include ../partials/getFogColor.glsl;
 #include ../partials/getGrassAttenuation.glsl;
 
-// REALISTIC NATURAL TERRAIN COLORS (original style)
-const vec3 GRASS_RICH = vec3(0.28, 0.42, 0.20);        // Rich dark grass
-const vec3 GRASS_MEADOW = vec3(0.35, 0.50, 0.24);      // Meadow grass
-const vec3 GRASS_DRY = vec3(0.40, 0.48, 0.22);         // Dry grass
-const vec3 DIRT_RICH = vec3(0.35, 0.28, 0.20);         // Dark rich soil
-const vec3 DIRT_DRY = vec3(0.45, 0.38, 0.28);          // Dry dirt
-
 void main()
 {
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
@@ -38,88 +29,42 @@ void main()
     // Terrain data
     vec4 terrainData = texture2D(uTexture, uv);
     vec3 normal = terrainData.rgb;
-    float elevation = terrainData.a;
 
-    // Slope calculation
+    // Slope
     float slope = 1.0 - abs(dot(vec3(0.0, 1.0, 0.0), normal));
 
     vec3 viewDirection = normalize(modelPosition.xyz - cameraPosition);
     vec3 worldNormal = normalize(mat3(modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz) * normal);
     vec3 viewNormal = normalize(normalMatrix * normal);
 
-    // ============= ALL GRASS TERRAIN =============
-
-    // Multi-scale detail noise
-    vec2 detailUV1 = modelPosition.xz * 0.03;
-    vec2 detailUV2 = modelPosition.xz * 0.10;
-    vec2 detailUV3 = modelPosition.xz * 0.25;
-
-    float noise1 = texture2D(uNoiseTexture, detailUV1).r;
-    float noise2 = texture2D(uNoiseTexture, detailUV2).g;
-    float noise3 = texture2D(uNoiseTexture, detailUV3).b;
-
-    // Moisture variation
-    float moisture = noise1 * 0.6 + noise2 * 0.4;
-    float heightFactor = clamp(elevation / 10.0, 0.0, 1.0);
-
-    // BASE GRASS LAYER
-    vec3 grassBase = mix(GRASS_RICH, GRASS_MEADOW, moisture);
-    grassBase = mix(grassBase, GRASS_DRY, heightFactor * 0.4);
-
-    // Add fine detail variation
-    grassBase += (noise2 - 0.5) * 0.04;
-    grassBase = mix(grassBase, grassBase * 0.90, noise3 * 0.15);
-
-    // DIRT PATCHES (very subtle)
-    vec3 dirtColor = mix(DIRT_RICH, DIRT_DRY, moisture * 0.7 + 0.3);
-    dirtColor += (noise3 - 0.5) * 0.05;
-
-    float dirtFactor = smoothstep(0.60, 0.75, noise1) * (1.0 - slope * 2.0);
-    vec3 terrainColor = mix(grassBase, dirtColor, dirtFactor * 0.08);
-
-    // Distance attenuation
+    // Color
+    vec3 uGrassDefaultColor = vec3(0.52, 0.65, 0.26);
+    vec3 uGrassShadedColor = vec3(0.52 / 1.3, 0.65 / 1.3, 0.26 / 1.3);
+    
+    // Grass distance attenuation
+    // Terrain must match the bottom of the grass which is darker
     float grassDistanceAttenuation = getGrassAttenuation(modelPosition.xz);
     float grassSlopeAttenuation = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
     float grassAttenuation = grassDistanceAttenuation * grassSlopeAttenuation;
+    vec3 grassColor = mix(uGrassShadedColor, uGrassDefaultColor, 1.0 - grassAttenuation);
 
-    vec3 baseColor = mix(terrainColor * 0.90, terrainColor, 1.0 - grassAttenuation);
+    vec3 color = grassColor;
 
-    // ============= ROAD SYSTEM REMOVED =============
-    vec3 color = baseColor;
-
-    // ============= NATURAL LIGHTING =============
-
-    // Natural sun lighting
+    // Sun shade
     float sunShade = getSunShade(normal);
-    sunShade = sunShade * 0.60 + 0.40;
     color = getSunShadeColor(color, sunShade);
 
-    // Sky ambient
-    float skyLight = normal.y * 0.5 + 0.5;
-    vec3 skyColor = vec3(0.40, 0.46, 0.58);
-    color += skyColor * skyLight * 0.10;
+    // Sun reflection
+    float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
+    color = getSunReflectionColor(color, sunReflection);
 
-    // Natural ambient boost
-    color = color * 1.25;
-
-    // Edge lighting
-    float rimLight = pow(1.0 - abs(dot(viewDirection, worldNormal)), 3.5);
-    color += vec3(0.68, 0.74, 0.85) * rimLight * 0.06;
-
-    // Grass backlight
-    float backlight = max(0.0, dot(normal, -uSunPosition));
-    color += vec3(0.75, 0.82, 0.58) * backlight * 0.08;
-
-    // Distance fog (restored)
+    // Fog
     vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
     color = getFogColor(color, depth, screenUv);
 
-    // Subtle saturation (original)
-    float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.05;
+    // vec3 dirtColor = vec3(0.3, 0.2, 0.1);
+    // vec3 color = mix(dirtColor, grassColor, terrainData.g);
 
-    // Final clamp
-    color = clamp(color, vec3(0.0), vec3(1.0));
-
+    // Varyings
     vColor = color;
 }
