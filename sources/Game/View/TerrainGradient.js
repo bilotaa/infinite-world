@@ -27,8 +27,8 @@ export default class TerrainGradient
         this.width = 1
         this.height = 512
 
-        this.canvas.width = this.width
-        this.canvas.height = this.height
+        // this.canvas.width = this.width
+        // this.canvas.height = this.height
 
         // this.canvas.style.position = 'fixed'
         // this.canvas.style.top = '48px'
