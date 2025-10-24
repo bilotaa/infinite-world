@@ -1,6 +1,6 @@
 vec3 getFogColor(vec3 baseColor, float depth, vec2 screenUv)
 {
-    float fogDensity = 0.00008;
+    float fogDensity = 0.000015;
     vec3 fogColor = vec3(0.75, 0.82, 0.92);
 
     float fogFactor = exp(-fogDensity * depth * depth);
