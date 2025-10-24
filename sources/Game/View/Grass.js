@@ -17,7 +17,7 @@ export default class Grass
         this.scene = this.view.scene
         this.noises = this.view.noises
 
-        this.details = 200
+        this.details = 150  // Reduced from 200 for better performance (22,500 blades vs 40,000)
         this.size = this.state.chunks.minSize
         this.count = this.details * this.details
         this.fragmentSize = this.size / this.details
