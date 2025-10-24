@@ -20,6 +20,7 @@ uniform float uFresnelPower;
 uniform vec3 uSunPosition;
 
 attribute vec2 center;
+// attribute float tipness;
 
 varying vec3 vColor;
 
@@ -31,12 +32,6 @@ varying vec3 vColor;
 #include ../partials/getSunReflectionColor.glsl;
 #include ../partials/getGrassAttenuation.glsl;
 #include ../partials/getRotatePivot2d.glsl;
-#include ../partials/getFogColor.glsl;
-
-// NATURAL REALISTIC GRASS COLORS (original style)
-const vec3 GRASS_DARK = vec3(0.22, 0.35, 0.18);      // Dark natural grass
-const vec3 GRASS_MID = vec3(0.28, 0.42, 0.22);       // Mid-tone grass
-const vec3 GRASS_LIGHT = vec3(0.32, 0.48, 0.24);     // Lighter grass tips
 
 void main()
 {
@@ -45,12 +40,12 @@ void main()
     newCenter -= uPlayerPosition.xz;
     float halfSize = uGrassDistance * 0.5;
     newCenter.x = mod(newCenter.x + halfSize, uGrassDistance) - halfSize;
-    newCenter.y = mod(newCenter.y + halfSize, uGrassDistance) - halfSize;
+    newCenter.y = mod(newCenter.y + halfSize, uGrassDistance) - halfSize; // Y considered as Z
     vec4 modelCenter = modelMatrix * vec4(newCenter.x, 0.0, newCenter.y, 1.0);
 
     // Move grass to center
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-    modelPosition.xz += newCenter;
+    modelPosition.xz += newCenter; // Y considered as Z
 
     // Rotate blade to face camera
     float angleToCamera = atan(modelCenter.x - cameraPosition.x, modelCenter.z - cameraPosition.z);
@@ -85,72 +80,41 @@ void main()
     // Attenuation
     float distanceScale = getGrassAttenuation(modelCenter.xz);
     float slopeScale = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
-
-    // Combined scale (road removed)
     float scale = distanceScale * slopeScale;
     modelPosition.xyz = mix(modelCenter.xyz, modelPosition.xyz, scale);
 
     // Tipness
     float tipness = step(2.0, mod(float(gl_VertexID) + 1.0, 3.0));
 
-    // Natural wind
-    vec2 windUV1 = modelPosition.xz * 0.02 + uTime * 0.05;
-    vec4 windNoise1 = texture2D(uNoiseTexture, windUV1);
-
-    float windStrength = 0.4;
-    modelPosition.x += (windNoise1.x - 0.5) * tipness * windStrength;
-    modelPosition.z += (windNoise1.y - 0.5) * tipness * windStrength;
+    // Wind
+    vec2 noiseUv = modelPosition.xz * 0.02 + uTime * 0.05;
+    vec4 noiseColor = texture2D(uNoiseTexture, noiseUv);
+    modelPosition.x += (noiseColor.x - 0.5) * tipness * scale;
+    modelPosition.z += (noiseColor.y - 0.5) * tipness * scale;
 
     // Final position
     vec4 viewPosition = viewMatrix * modelPosition;
     gl_Position = projectionMatrix * viewPosition;
-
+    
     vec3 viewDirection = normalize(modelPosition.xyz - cameraPosition);
+    // vec3 normal = vec3(0.0, 1.0, 0.0);
     vec3 worldNormal = normalize(mat3(modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz) * normal);
     vec3 viewNormal = normalize(normalMatrix * normal);
 
-    // ============= NATURAL REALISTIC GRASS =============
+    // Grass color
+    vec3 uGrassDefaultColor = vec3(0.52, 0.65, 0.26);
+    vec3 uGrassShadedColor = vec3(0.52 / 1.3, 0.65 / 1.3, 0.26 / 1.3);
+    vec3 lowColor = mix(uGrassShadedColor, uGrassDefaultColor, 1.0 - scale); // Match the terrain
+    vec3 color = mix(lowColor, uGrassDefaultColor, tipness);
 
-    vec2 bladeID = modelCenter.xz * 0.1;
-    vec4 bladeNoise = texture2D(uNoiseTexture, bladeID);
-
-    // Natural dark green grass color
-    vec3 baseGrassColor = mix(GRASS_DARK, GRASS_MID, bladeNoise.r);
-    baseGrassColor = mix(baseGrassColor, GRASS_LIGHT, bladeNoise.g * 0.3);
-
-    // Slight variation
-    baseGrassColor += (bladeNoise.b - 0.5) * 0.03;
-
-    // Base to tip gradient (natural look)
-    vec3 baseShade = baseGrassColor * 0.75;
-    vec3 tipShade = baseGrassColor * 1.15;
-
-    vec3 baseColor = mix(baseShade, tipShade, tipness);
-
-    // Natural distance fade
-    vec3 color = mix(baseColor * 0.85, baseColor, 1.0 - scale * 0.5);
-
-    // ============= NATURAL LIGHTING =============
-
-    // Natural sun lighting
+    // Sun shade
     float sunShade = getSunShade(normal);
-    sunShade = sunShade * 0.65 + 0.35;
     color = getSunShadeColor(color, sunShade);
 
-    // Natural ambient light
-    color = color * 1.3;
-
-    // Atmospheric fog (restored)
-    float depth = - viewPosition.z;
-    vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
-    color = getFogColor(color, depth, screenUv);
-
-    // Subtle saturation (original)
-    float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.1;
-
-    // Clamp
-    color = clamp(color, vec3(0.0), vec3(1.0));
+    // Sun reflection
+    float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
+    color = getSunReflectionColor(color, sunReflection);
 
     vColor = color;
+    // vColor = vec3(slope);
 }

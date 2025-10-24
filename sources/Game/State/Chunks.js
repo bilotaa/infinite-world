@@ -11,9 +11,9 @@ export default class Chunks
         this.state = State.getInstance()
 
         this.minSize = 64
-        this.maxDepth = 4  // Reduced to prevent freeze (was 5)
+        this.maxDepth = 4
         this.maxSize = this.minSize * Math.pow(2, this.maxDepth)
-        this.splitRatioPerSize = 1.5  // Balanced render distance (was 1.8)
+        this.splitRatioPerSize = 1.3
         this.lastId = 0
         
         this.events = new EventsEmitter()
@@ -65,7 +65,7 @@ export default class Chunks
     {
         // Check only if player coordinates changed to to another minimal chunk
         const player = this.state.player
-        const playerChunkKey = `${Math.round(player.position.current[0] / this.minSize * 2)}${Math.round(player.position.current[2] / this.minSize * 2)}`
+        const playerChunkKey = `${Math.round(player.position.current[0] / this.minSize * 2 + 0.5)}${Math.round(player.position.current[2] / this.minSize * 2 + 0.5)}`
 
         if(playerChunkKey !== this.playerChunkKey)
         {
