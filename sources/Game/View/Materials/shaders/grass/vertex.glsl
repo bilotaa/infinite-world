@@ -221,9 +221,9 @@ void main()
     vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
     color = getFogColor(color, depth, screenUv);
     
-    // Boost color saturation for vibrancy
+    // Boost color saturation for vibrancy (reduced from 1.25 to 1.15)
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.25;
+    color = luminance + (color - luminance) * 1.15;
     
     // Clamp to prevent neon artifacts
     color = clamp(color, vec3(0.0), vec3(1.0));
