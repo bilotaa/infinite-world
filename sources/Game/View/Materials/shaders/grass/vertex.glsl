@@ -38,10 +38,10 @@ const float ROAD_CENTER_X = 0.0;
 const float ROAD_HALF_WIDTH = 8.0;
 const float ROAD_SMOOTH_WIDTH = 0.5;
 
-// BRIGHT GAME-STYLE GRASS COLORS (like the screenshot)
-const vec3 GRASS_BRIGHT_GREEN = vec3(0.55, 0.75, 0.35);    // Bright lime green
-const vec3 GRASS_VIBRANT = vec3(0.60, 0.80, 0.40);         // Even brighter
-const vec3 GRASS_LIME = vec3(0.58, 0.78, 0.38);            // Lime tint
+// NATURAL REALISTIC GRASS COLORS (original style)
+const vec3 GRASS_DARK = vec3(0.22, 0.35, 0.18);      // Dark natural grass
+const vec3 GRASS_MID = vec3(0.28, 0.42, 0.22);       // Mid-tone grass
+const vec3 GRASS_LIGHT = vec3(0.32, 0.48, 0.24);     // Lighter grass tips
 
 float smoothStepCustom(float edge0, float edge1, float x) {
     float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
@@ -138,43 +138,45 @@ void main()
     vec3 worldNormal = normalize(mat3(modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz) * normal);
     vec3 viewNormal = normalize(normalMatrix * normal);
 
-    // ============= BRIGHT GAME-STYLE GRASS =============
+    // ============= NATURAL REALISTIC GRASS =============
 
     vec2 bladeID = modelCenter.xz * 0.1;
     vec4 bladeNoise = texture2D(uNoiseTexture, bladeID);
 
-    // Bright lime green grass color
-    vec3 baseGrassColor = mix(GRASS_BRIGHT_GREEN, GRASS_VIBRANT, bladeNoise.r);
-    baseGrassColor = mix(baseGrassColor, GRASS_LIME, bladeNoise.g * 0.5);
+    // Natural dark green grass color
+    vec3 baseGrassColor = mix(GRASS_DARK, GRASS_MID, bladeNoise.r);
+    baseGrassColor = mix(baseGrassColor, GRASS_LIGHT, bladeNoise.g * 0.3);
 
     // Slight variation
     baseGrassColor += (bladeNoise.b - 0.5) * 0.03;
 
-    // Base to tip gradient (keep it bright)
-    vec3 baseShade = baseGrassColor * 0.85;
-    vec3 tipShade = baseGrassColor * 1.1;
+    // Base to tip gradient (natural look)
+    vec3 baseShade = baseGrassColor * 0.75;
+    vec3 tipShade = baseGrassColor * 1.15;
 
     vec3 baseColor = mix(baseShade, tipShade, tipness);
 
-    // Very minimal distance fade (keep brightness)
-    vec3 color = mix(baseColor * 0.95, baseColor, 1.0 - scale * 0.3);
+    // Natural distance fade
+    vec3 color = mix(baseColor * 0.85, baseColor, 1.0 - scale * 0.5);
 
-    // ============= BRIGHT GAME LIGHTING =============
+    // ============= NATURAL LIGHTING =============
 
-    // Soft sun lighting
+    // Natural sun lighting
     float sunShade = getSunShade(normal);
-    sunShade = sunShade * 0.5 + 0.5;  // Very soft shadows
+    sunShade = sunShade * 0.65 + 0.35;
     color = getSunShadeColor(color, sunShade);
 
-    // High ambient light (game-style bright)
-    color = color * 1.8;
+    // Natural ambient light
+    color = color * 1.3;
 
-    // No fog for crystal clear view
-    // (removed fog application)
+    // Atmospheric fog (restored)
+    float depth = - viewPosition.z;
+    vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
+    color = getFogColor(color, depth, screenUv);
 
-    // Boost saturation for vibrant game look
+    // Subtle saturation (original)
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.3;
+    color = luminance + (color - luminance) * 1.1;
 
     // Clamp
     color = clamp(color, vec3(0.0), vec3(1.0));
