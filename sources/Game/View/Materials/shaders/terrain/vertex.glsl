@@ -33,14 +33,15 @@ const float EDGE_LINE_POSITION = 7.0;
 const float ROAD_CENTER_X = 0.0;
 const float ROAD_SMOOTH_WIDTH = 0.5;
 
-// NATURAL TERRAIN COLORS (realistic, toned down)
-const vec3 GRASS_BASE = vec3(0.32, 0.48, 0.22);
-const vec3 GRASS_LIGHT = vec3(0.40, 0.56, 0.26);
-const vec3 DIRT_BASE = vec3(0.38, 0.30, 0.22);
-const vec3 ROCK_DARK = vec3(0.40, 0.40, 0.42);
-const vec3 ROCK_LIGHT = vec3(0.55, 0.53, 0.50);
-const vec3 SNOW_COLOR = vec3(0.88, 0.90, 0.92);
-const vec3 SNOW_SHADOW = vec3(0.72, 0.76, 0.82);
+// ULTRA REALISTIC TERRAIN COLORS
+const vec3 GRASS_RICH = vec3(0.28, 0.42, 0.20);        // Rich dark grass
+const vec3 GRASS_MEADOW = vec3(0.35, 0.50, 0.24);      // Meadow grass
+const vec3 GRASS_DRY = vec3(0.40, 0.48, 0.22);         // Dry grass
+const vec3 DIRT_RICH = vec3(0.35, 0.28, 0.20);         // Dark rich soil
+const vec3 DIRT_DRY = vec3(0.45, 0.38, 0.28);          // Dry dirt
+const vec3 ROCK_BASE = vec3(0.38, 0.38, 0.40);         // Base granite
+const vec3 ROCK_WEATHERED = vec3(0.50, 0.48, 0.45);    // Weathered stone
+const vec3 ROCK_DARK = vec3(0.30, 0.30, 0.32);         // Dark stone cracks
 
 float smoothStep(float edge0, float edge1, float x) {
     float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
@@ -106,47 +107,71 @@ void main()
     vec3 worldNormal = normalize(mat3(modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz) * normal);
     vec3 viewNormal = normalize(normalMatrix * normal);
 
-    // ============= NATURAL TERRAIN COLORS =============
+    // ============= PHOTOREALISTIC TERRAIN SYSTEM =============
 
-    // Subtle multi-scale noise
-    vec2 noiseUV1 = modelPosition.xz * 0.04;
-    vec2 noiseUV2 = modelPosition.xz * 0.12;
+    // Multi-scale detail noise
+    vec2 detailUV1 = modelPosition.xz * 0.03;
+    vec2 detailUV2 = modelPosition.xz * 0.10;
+    vec2 detailUV3 = modelPosition.xz * 0.25;
 
-    float noise1 = texture2D(uNoiseTexture, noiseUV1).r;
-    float noise2 = texture2D(uNoiseTexture, noiseUV2).g;
+    float noise1 = texture2D(uNoiseTexture, detailUV1).r;
+    float noise2 = texture2D(uNoiseTexture, detailUV2).g;
+    float noise3 = texture2D(uNoiseTexture, detailUV3).b;
 
-    // Moisture for grass variation
-    float moisture = noise1 * 0.7 + noise2 * 0.3;
+    // Moisture and elevation factors
+    float moisture = noise1 * 0.6 + noise2 * 0.4;
+    float heightFactor = clamp(elevation / 10.0, 0.0, 1.0);
 
-    // GRASS LAYER (base terrain)
-    vec3 grassColor = mix(GRASS_BASE, GRASS_LIGHT, moisture);
-    grassColor = mix(grassColor, grassColor * 0.92, noise2 * 0.12);
+    // ============= BASE GRASS LAYER =============
+    vec3 grassBase = mix(GRASS_RICH, GRASS_MEADOW, moisture);
+    grassBase = mix(grassBase, GRASS_DRY, heightFactor * 0.4);
 
-    // DIRT patches (subtle, not too many)
-    vec3 dirtColor = DIRT_BASE * (0.95 + noise2 * 0.1);
-    float dirtAmount = smoothstep(0.55, 0.65, noise1) * (1.0 - slope * 2.0);
-    vec3 terrainColor = mix(grassColor, dirtColor, dirtAmount * 0.2);
+    // Add fine detail variation
+    grassBase += (noise2 - 0.5) * 0.04;
+    grassBase = mix(grassBase, grassBase * 0.90, noise3 * 0.15);
 
-    // ROCK on slopes
-    vec3 rockColor = mix(ROCK_DARK, ROCK_LIGHT, noise2 * 0.6 + 0.2);
-    rockColor = mix(rockColor, rockColor * 0.90, noise1 * 0.15);
+    // ============= DIRT PATCHES =============
+    vec3 dirtColor = mix(DIRT_RICH, DIRT_DRY, moisture * 0.7 + 0.3);
+    dirtColor += (noise3 - 0.5) * 0.05;
 
-    float rockBlend = smoothstep(0.3, 0.55, slope);
-    terrainColor = mix(terrainColor, rockColor, rockBlend);
+    // Subtle dirt in low-slope areas
+    float dirtFactor = smoothstep(0.52, 0.62, noise1) * (1.0 - slope * 1.5);
+    vec3 terrainBase = mix(grassBase, dirtColor, dirtFactor * 0.25);
 
-    // SNOW on high mountains
-    vec3 snowColor = mix(SNOW_SHADOW, SNOW_COLOR, 0.6 + noise1 * 0.4);
-    float snowLine = 7.0;
-    float snowBlend = smoothstep(snowLine, snowLine + 2.5, elevation);
-    snowBlend *= (1.0 - slope * 0.4);
-    terrainColor = mix(terrainColor, snowColor, snowBlend);
+    // ============= ROCK ON MOUNTAINS =============
+
+    // Multi-layered rock color
+    vec3 rockColor = ROCK_BASE;
+    rockColor = mix(rockColor, ROCK_WEATHERED, noise2 * 0.6 + 0.2);
+    rockColor = mix(rockColor, ROCK_DARK, noise3 * 0.3);
+
+    // Add rock detail (cracks and variation)
+    float rockDetail = noise1 * 0.5 + noise2 * 0.3 + noise3 * 0.2;
+    rockColor = mix(rockColor, rockColor * 0.85, rockDetail * 0.25);
+
+    // Moss on rocks (greenish tint on less steep areas)
+    vec3 mossColor = vec3(0.25, 0.35, 0.22);
+    float mossFactor = (1.0 - slope) * noise2 * 0.3;
+    rockColor = mix(rockColor, mossColor, mossFactor * 0.2);
+
+    // Rock blending based on slope and elevation
+    float rockBySlope = smoothstep(0.28, 0.50, slope);
+    float rockByHeight = smoothstep(4.0, 8.0, elevation);
+    float rockBlend = max(rockBySlope, rockByHeight * 0.6);
+
+    vec3 terrainColor = mix(terrainBase, rockColor, rockBlend);
+
+    // ============= ELEVATION-BASED DARKENING =============
+    // Higher mountains get slightly darker (shadow effect)
+    float elevationDarken = smoothstep(5.0, 10.0, elevation);
+    terrainColor = mix(terrainColor, terrainColor * 0.88, elevationDarken * 0.3);
 
     // Distance attenuation
     float grassDistanceAttenuation = getGrassAttenuation(modelPosition.xz);
     float grassSlopeAttenuation = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
     float grassAttenuation = grassDistanceAttenuation * grassSlopeAttenuation;
 
-    vec3 baseColor = mix(terrainColor * 0.92, terrainColor, 1.0 - grassAttenuation);
+    vec3 baseColor = mix(terrainColor * 0.90, terrainColor, 1.0 - grassAttenuation);
 
     // ============= ROAD SYSTEM =============
     float roadInfluence = getRoadInfluence(modelPosition.x);
@@ -155,49 +180,49 @@ void main()
     float laneMarking = getRoadLaneMarking(modelPosition.xyz);
     color = mix(color, LINE_COLOR, laneMarking * roadInfluence);
 
-    // ============= NATURAL LIGHTING =============
+    // ============= REALISTIC LIGHTING =============
 
-    // Diffuse sun lighting
+    // Natural sun lighting
     float sunShade = getSunShade(normal);
-    sunShade = sunShade * 0.65 + 0.35;
+    sunShade = sunShade * 0.60 + 0.40;  // Softer shadows
     color = getSunShadeColor(color, sunShade);
 
-    // Subtle sky ambient
-    float skyLight = (normal.y * 0.5 + 0.5);
-    vec3 skyColor = vec3(0.42, 0.48, 0.60);
-    color += skyColor * skyLight * 0.12;
+    // Sky ambient (blue from above)
+    float skyLight = normal.y * 0.5 + 0.5;
+    vec3 skyColor = vec3(0.40, 0.46, 0.58);
+    color += skyColor * skyLight * 0.10;
 
-    // Moderate ambient boost
-    color = color * 1.2;
+    // Ambient boost
+    color = color * 1.25;
 
-    // Subtle rim lighting
+    // Edge lighting for depth
     float rimLight = pow(1.0 - abs(dot(viewDirection, worldNormal)), 3.5);
-    color += vec3(0.72, 0.78, 0.88) * rimLight * 0.08;
+    color += vec3(0.68, 0.74, 0.85) * rimLight * 0.06;
 
-    // Rock specular (subtle)
+    // Rock gets subtle specular
     float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
-    sunReflection *= rockBlend * 0.3;
+    sunReflection *= rockBlend * 0.25;
     color = getSunReflectionColor(color, sunReflection);
 
-    // Grass subsurface (subtle)
-    float backlight = max(0.0, dot(normal, -uSunPosition));
-    if (backlight > 0.0 && rockBlend < 0.4 && snowBlend < 0.3) {
-        color += vec3(0.82, 0.88, 0.62) * backlight * 0.1 * (1.0 - rockBlend);
+    // Grass backlight (very subtle)
+    if (rockBlend < 0.5) {
+        float backlight = max(0.0, dot(normal, -uSunPosition));
+        color += vec3(0.75, 0.82, 0.58) * backlight * 0.08 * (1.0 - rockBlend);
     }
 
-    // ============= ATMOSPHERIC EFFECTS =============
+    // ============= ATMOSPHERE =============
 
-    // Height-based atmosphere (subtle)
-    float atmosphericTint = clamp(elevation / 18.0, 0.0, 0.2);
-    color = mix(color, color * vec3(0.88, 0.92, 1.05), atmosphericTint);
+    // Subtle height tint (mountains get cooler tone)
+    float atmosphericTint = clamp(elevation / 15.0, 0.0, 0.15);
+    color = mix(color, color * vec3(0.92, 0.94, 1.02), atmosphericTint);
 
     // Distance fog
     vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
     color = getFogColor(color, depth, screenUv);
 
-    // Subtle saturation boost
+    // Very subtle saturation
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.08;
+    color = luminance + (color - luminance) * 1.05;
 
     // Final clamp
     color = clamp(color, vec3(0.0), vec3(1.0));
