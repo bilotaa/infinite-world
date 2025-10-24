@@ -24,11 +24,11 @@ export default class Terrains
         this.random = new seedrandom(this.seed)
         this.subdivisions = 40
         this.lacunarity = 2.05
-        this.persistence = 0.45
+        this.persistence = 0.50  // Increased from 0.45 for smoother octave blending
         this.maxIterations = 6
-        this.baseFrequency = 0.003
-        this.baseAmplitude = 180
-        this.power = 2
+        this.baseFrequency = 0.0025  // Reduced from 0.003 for larger, smoother features
+        this.baseAmplitude = 120  // Reduced from 180 for gentler rolling hills
+        this.power = 1.5  // Reduced from 2 for less extreme peaks/valleys
         this.elevationOffset = 1
 
         this.segments = this.subdivisions + 1

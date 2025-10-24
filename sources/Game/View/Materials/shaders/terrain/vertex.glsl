@@ -134,9 +134,9 @@ void main()
     vec3 dirtColor = mix(DIRT_RICH, DIRT_DRY, moisture * 0.7 + 0.3);
     dirtColor += (noise3 - 0.5) * 0.05;
 
-    // Subtle dirt in low-slope areas
-    float dirtFactor = smoothstep(0.52, 0.62, noise1) * (1.0 - slope * 1.5);
-    vec3 terrainBase = mix(grassBase, dirtColor, dirtFactor * 0.25);
+    // Very subtle dirt in low-slope areas (rare, not potholes)
+    float dirtFactor = smoothstep(0.60, 0.75, noise1) * (1.0 - slope * 2.0);
+    vec3 terrainBase = mix(grassBase, dirtColor, dirtFactor * 0.08);
 
     // ============= ROCK ON MOUNTAINS =============
 
