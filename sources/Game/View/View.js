@@ -6,8 +6,6 @@ import Player from './Player.js'
 import Renderer from './Renderer.js'
 import Sky from './Sky.js'
 import Terrains from './Terrains.js'
-import Trees from './Trees.js'
-import Stones from './Stones.js'
 import Water from './Water.js'
 
 import * as THREE from 'three'
@@ -36,8 +34,6 @@ export default class View
         this.sky = new Sky()
         this.water = new Water()
         this.terrains = new Terrains()
-        this.trees = new Trees()
-        this.stones = new Stones()
         this.chunks = new Chunks()
         this.player = new Player()
         this.grass = new Grass()
@@ -56,8 +52,6 @@ export default class View
         this.sky.update()
         this.water.update()
         this.terrains.update()
-        this.trees.update()
-        this.stones.update()
         this.chunks.update()
         this.player.update()
         this.grass.update()
@@ -67,23 +61,5 @@ export default class View
 
     destroy()
     {
-        // Clean up all view components to free memory
-        if (this.renderer) this.renderer.destroy()
-        if (this.grass && this.grass.destroy) this.grass.destroy()
-        if (this.player && this.player.destroy) this.player.destroy()
-        if (this.stones && this.stones.destroy) this.stones.destroy()
-        if (this.trees && this.trees.destroy) this.trees.destroy()
-        if (this.chunks && this.chunks.destroy) this.chunks.destroy()
-        if (this.terrains && this.terrains.destroy) this.terrains.destroy()
-        if (this.water && this.water.destroy) this.water.destroy()
-        if (this.sky && this.sky.destroy) this.sky.destroy()
-        if (this.noises && this.noises.destroy) this.noises.destroy()
-        
-        // Clear scene
-        if (this.scene) {
-            while(this.scene.children.length > 0) {
-                this.scene.remove(this.scene.children[0])
-            }
-        }
     }
 }
