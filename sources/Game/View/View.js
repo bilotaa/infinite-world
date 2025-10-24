@@ -6,6 +6,7 @@ import Player from './Player.js'
 import Renderer from './Renderer.js'
 import Sky from './Sky.js'
 import Terrains from './Terrains.js'
+import Trees from './Trees.js'
 import Water from './Water.js'
 
 import * as THREE from 'three'
@@ -34,6 +35,7 @@ export default class View
         this.sky = new Sky()
         this.water = new Water()
         this.terrains = new Terrains()
+        this.trees = new Trees()
         this.chunks = new Chunks()
         this.player = new Player()
         this.grass = new Grass()
@@ -52,6 +54,7 @@ export default class View
         this.sky.update()
         this.water.update()
         this.terrains.update()
+        this.trees.update()
         this.chunks.update()
         this.player.update()
         this.grass.update()
@@ -65,6 +68,7 @@ export default class View
         if (this.renderer) this.renderer.destroy()
         if (this.grass && this.grass.destroy) this.grass.destroy()
         if (this.player && this.player.destroy) this.player.destroy()
+        if (this.trees && this.trees.destroy) this.trees.destroy()
         if (this.chunks && this.chunks.destroy) this.chunks.destroy()
         if (this.terrains && this.terrains.destroy) this.terrains.destroy()
         if (this.water && this.water.destroy) this.water.destroy()
