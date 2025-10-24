@@ -47,4 +47,15 @@ export default class State
         this.player.update()
         this.chunks.update()
     }
+    
+    destroy()
+    {
+        // Clean up all state components
+        if (this.chunks && this.chunks.destroy) this.chunks.destroy()
+        if (this.terrains && this.terrains.destroy) this.terrains.destroy()
+        if (this.player && this.player.destroy) this.player.destroy()
+        if (this.sun && this.sun.destroy) this.sun.destroy()
+        if (this.day && this.day.destroy) this.day.destroy()
+        if (this.controls && this.controls.destroy) this.controls.destroy()
+    }
 }
