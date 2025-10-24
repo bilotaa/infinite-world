@@ -7,6 +7,7 @@ uniform vec3 uSunPosition;
 uniform float uGrassDistance;
 uniform sampler2D uTexture;
 uniform sampler2D uFogTexture;
+uniform sampler2D uGradientTexture;
 
 varying vec3 vColor;
 
@@ -18,6 +19,7 @@ varying vec3 vColor;
 #include ../partials/getSunReflectionColor.glsl;
 #include ../partials/getFogColor.glsl;
 #include ../partials/getGrassAttenuation.glsl;
+#include ../partials/getAmbientOcclusion.glsl;
 
 // Road visual constants
 const vec3 ROAD_COLOR = vec3(0.6, 0.6, 0.6);            // Much brighter grey
@@ -98,16 +100,22 @@ void main()
     vec3 worldNormal = normalize(mat3(modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz) * normal);
     vec3 viewNormal = normalize(normalMatrix * normal);
 
-    // Color
-    vec3 uGrassDefaultColor = vec3(0.52, 0.65, 0.26);
-    vec3 uGrassShadedColor = vec3(0.52 / 1.3, 0.65 / 1.3, 0.26 / 1.3);
+    // Color - Sample gradient based on elevation
+    float elevationNormalized = clamp((terrainData.a + 10.0) / 20.0, 0.0, 1.0);
+    vec3 gradientColor = texture2D(uGradientTexture, vec2(0.5, elevationNormalized)).rgb;
+    
+    // Rock color for steep slopes
+    vec3 rockColor = vec3(0.55, 0.55, 0.55);
+    float rockBlend = smoothstep(0.35, 0.55, slope);
+    vec3 terrainColor = mix(gradientColor, rockColor, rockBlend);
     
     // Grass distance attenuation
-    // Terrain must match the bottom of the grass which is darker
     float grassDistanceAttenuation = getGrassAttenuation(modelPosition.xz);
     float grassSlopeAttenuation = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
     float grassAttenuation = grassDistanceAttenuation * grassSlopeAttenuation;
-    vec3 grassColor = mix(uGrassShadedColor, uGrassDefaultColor, 1.0 - grassAttenuation);
+    
+    // Darken distant terrain
+    vec3 grassColor = mix(terrainColor * 0.77, terrainColor, 1.0 - grassAttenuation);
 
     // Calculate road influence from world position
     float roadInfluence = getRoadInfluence(modelPosition.x);
@@ -123,6 +131,10 @@ void main()
     float sunShade = getSunShade(normal);
     color = getSunShadeColor(color, sunShade);
 
+    // Ambient occlusion
+    float ao = getAmbientOcclusion(normal);
+    color *= ao;
+
     // Sun reflection (reduce intensity on steep slopes to prevent artifacts)
     float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
     sunReflection *= (1.0 - slope);  // Reduce on steep slopes
@@ -131,6 +143,10 @@ void main()
     // Fog
     vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
     color = getFogColor(color, depth, screenUv);
+    
+    // Boost color saturation for vibrancy
+    float luminance = dot(color, vec3(0.299, 0.587, 0.114));
+    color = luminance + (color - luminance) * 1.25;
     
     // Clamp to prevent neon artifacts
     color = clamp(color, vec3(0.0), vec3(1.0));
