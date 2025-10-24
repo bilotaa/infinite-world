@@ -17,7 +17,7 @@ export default class Grass
         this.scene = this.view.scene
         this.noises = this.view.noises
 
-        this.details = 150  // Reduced from 200 for better performance (22,500 blades vs 40,000)
+        this.details = 200
         this.size = this.state.chunks.minSize
         this.count = this.details * this.details
         this.fragmentSize = this.size / this.details
@@ -128,7 +128,6 @@ export default class Grass
             this.material
         )
         this.mesh.frustumCulled = false
-        this.mesh.visible = false  // Hide until terrain data is ready
         this.scene.add(this.mesh)
     }
 
@@ -151,9 +150,6 @@ export default class Grass
 
         if(aChunkState && aChunkState.terrain && aChunkState.terrain.renderInstance.texture)
         {
-            // Show grass once terrain data is available
-            this.mesh.visible = true
-            
             // Texture A
             this.material.uniforms.uTerrainATexture.value = aChunkState.terrain.renderInstance.texture
             this.material.uniforms.uTerrainAOffset.value.set(
