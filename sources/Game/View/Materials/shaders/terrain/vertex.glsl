@@ -114,8 +114,8 @@ void main()
     float grassSlopeAttenuation = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
     float grassAttenuation = grassDistanceAttenuation * grassSlopeAttenuation;
     
-    // Darken distant terrain
-    vec3 grassColor = mix(terrainColor * 0.77, terrainColor, 1.0 - grassAttenuation);
+    // Darken distant terrain (reduced from 0.77 to 0.92 for brightness)
+    vec3 grassColor = mix(terrainColor * 0.92, terrainColor, 1.0 - grassAttenuation);
 
     // Calculate road influence from world position
     float roadInfluence = getRoadInfluence(modelPosition.x);
@@ -144,9 +144,9 @@ void main()
     vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
     color = getFogColor(color, depth, screenUv);
     
-    // Boost color saturation for vibrancy
+    // Boost color saturation for vibrancy (reduced from 1.25 to 1.15)
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.25;
+    color = luminance + (color - luminance) * 1.15;
     
     // Clamp to prevent neon artifacts
     color = clamp(color, vec3(0.0), vec3(1.0));
