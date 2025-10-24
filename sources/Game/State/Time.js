@@ -22,9 +22,10 @@ export default class Time
         this.elapsed += this.delta
         this.current = current
 
-        if(this.delta > 60 / 1000)
+        // Clamp delta to 33ms (30 FPS minimum) to prevent physics instability
+        if(this.delta > 33 / 1000)
         {
-            this.delta = 60 / 1000
+            this.delta = 33 / 1000
         }
     }
 }
