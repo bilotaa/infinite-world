@@ -34,11 +34,11 @@ const float ROAD_CENTER_X = 0.0;
 const float ROAD_SMOOTH_WIDTH = 0.5;
 
 // ALL GRASS TERRAIN COLORS
-const vec3 GRASS_RICH = vec3(0.28, 0.42, 0.20);        // Rich dark grass
-const vec3 GRASS_MEADOW = vec3(0.35, 0.50, 0.24);      // Meadow grass
-const vec3 GRASS_DRY = vec3(0.40, 0.48, 0.22);         // Dry grass
-const vec3 DIRT_RICH = vec3(0.35, 0.28, 0.20);         // Dark rich soil
-const vec3 DIRT_DRY = vec3(0.45, 0.38, 0.28);          // Dry dirt
+const vec3 GRASS_RICH = vec3(0.55, 0.75, 0.35);        // Bright lime green
+const vec3 GRASS_MEADOW = vec3(0.60, 0.80, 0.40);      // Even brighter
+const vec3 GRASS_DRY = vec3(0.58, 0.78, 0.38);         // Lime tint
+const vec3 DIRT_RICH = vec3(0.50, 0.45, 0.30);         // Lighter dirt
+const vec3 DIRT_DRY = vec3(0.55, 0.50, 0.35);          // Bright dry dirt
 
 float smoothStep(float edge0, float edge1, float x) {
     float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
@@ -152,7 +152,7 @@ void main()
 
     // Natural sun lighting
     float sunShade = getSunShade(normal);
-    sunShade = sunShade * 0.60 + 0.40;
+    sunShade = sunShade * 0.50 + 0.50;  // Very soft shadows (game-style)
     color = getSunShadeColor(color, sunShade);
 
     // Sky ambient
@@ -160,8 +160,8 @@ void main()
     vec3 skyColor = vec3(0.40, 0.46, 0.58);
     color += skyColor * skyLight * 0.10;
 
-    // Ambient boost
-    color = color * 1.25;
+    // High ambient boost (game-style bright)
+    color = color * 1.8;
 
     // Edge lighting
     float rimLight = pow(1.0 - abs(dot(viewDirection, worldNormal)), 3.5);
@@ -171,13 +171,12 @@ void main()
     float backlight = max(0.0, dot(normal, -uSunPosition));
     color += vec3(0.75, 0.82, 0.58) * backlight * 0.08;
 
-    // Distance fog
-    vec2 screenUv = (gl_Position.xy / gl_Position.w * 0.5) + 0.5;
-    color = getFogColor(color, depth, screenUv);
+    // No fog for crystal clear view
+    // (removed fog application)
 
-    // Very subtle saturation
+    // Boost saturation for vibrant game look
     float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-    color = luminance + (color - luminance) * 1.05;
+    color = luminance + (color - luminance) * 1.3;
 
     // Final clamp
     color = clamp(color, vec3(0.0), vec3(1.0));
