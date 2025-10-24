@@ -33,36 +33,10 @@ varying vec3 vColor;
 #include ../partials/getRotatePivot2d.glsl;
 #include ../partials/getFogColor.glsl;
 
-// Road configuration
-const float ROAD_CENTER_X = 0.0;
-const float ROAD_HALF_WIDTH = 8.0;
-const float ROAD_SMOOTH_WIDTH = 0.5;
-
 // NATURAL REALISTIC GRASS COLORS (original style)
 const vec3 GRASS_DARK = vec3(0.22, 0.35, 0.18);      // Dark natural grass
 const vec3 GRASS_MID = vec3(0.28, 0.42, 0.22);       // Mid-tone grass
 const vec3 GRASS_LIGHT = vec3(0.32, 0.48, 0.24);     // Lighter grass tips
-
-float smoothStepCustom(float edge0, float edge1, float x) {
-    float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-    return t * t * (3.0 - 2.0 * t);
-}
-
-float getRoadInfluence(float x) {
-    float distanceFromRoadCenter = abs(x - ROAD_CENTER_X);
-    float halfRoadWidth = ROAD_HALF_WIDTH;
-    float totalWidth = halfRoadWidth + ROAD_SMOOTH_WIDTH;
-
-    if (distanceFromRoadCenter < halfRoadWidth) {
-        return 1.0;
-    } else if (distanceFromRoadCenter < totalWidth) {
-        float blendDistance = distanceFromRoadCenter - halfRoadWidth;
-        float blendFactor = 1.0 - (blendDistance / ROAD_SMOOTH_WIDTH);
-        return smoothStepCustom(0.0, 1.0, blendFactor);
-    }
-
-    return 0.0;
-}
 
 void main()
 {
@@ -112,11 +86,8 @@ void main()
     float distanceScale = getGrassAttenuation(modelCenter.xz);
     float slopeScale = smoothstep(remap(slope, 0.4, 0.5, 1.0, 0.0), 0.0, 1.0);
 
-    // Road attenuation
-    float roadInfluence = getRoadInfluence(modelCenter.x);
-    float roadScale = 1.0 - roadInfluence;
-
-    float scale = distanceScale * slopeScale * roadScale;
+    // Combined scale (road removed)
+    float scale = distanceScale * slopeScale;
     modelPosition.xyz = mix(modelCenter.xyz, modelPosition.xyz, scale);
 
     // Tipness
