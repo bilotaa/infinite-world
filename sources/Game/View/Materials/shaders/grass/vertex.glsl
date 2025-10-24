@@ -199,9 +199,12 @@ void main()
     float sunShade = getSunShade(normal);
     color = getSunShadeColor(color, sunShade);
 
-    // Ambient occlusion
-    float ao = getAmbientOcclusion(normal);
-    color *= ao;
+    // Ambient occlusion - DISABLED - was causing too much darkness
+    // float ao = getAmbientOcclusion(normal);
+    // color *= ao;
+    
+    // Add strong ambient light to brighten the scene
+    color = color * 1.3;
 
     // Sun reflection (reduce on steep slopes to prevent neon artifacts)
     float sunReflection = getSunReflection(viewDirection, worldNormal, viewNormal);
