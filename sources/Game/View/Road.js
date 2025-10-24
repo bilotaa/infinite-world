@@ -20,23 +20,9 @@ export default class Road
         this.roadSegments = 200
         this.chunkSize = this.state.chunks.minSize
 
-        // Road curve parameters
-        this.curveAmplitude = 40.0     // How far road curves left/right
-        this.curveFrequency = 0.008     // How often turns happen
-        this.curveFrequency2 = 0.003    // Secondary frequency for variety
-
         this.setGeometry()
         this.setMaterial()
         this.setMesh()
-    }
-
-    // Calculate road center X position for any Z position
-    getRoadCenterX(z)
-    {
-        // Combine multiple sine waves for natural-looking curves
-        const curve1 = Math.sin(z * this.curveFrequency) * this.curveAmplitude
-        const curve2 = Math.sin(z * this.curveFrequency2) * this.curveAmplitude * 0.5
-        return curve1 + curve2
     }
 
     setGeometry()
@@ -78,7 +64,7 @@ export default class Road
         // Keep road centered on player Z position
         this.mesh.position.set(0, 0, playerPosition[2])
 
-        // Sample terrain height and update road geometry to follow terrain and curves
+        // Sample terrain height and update road geometry to follow terrain
         const positions = this.geometry.attributes.position.array
 
         for (let i = 0; i < positions.length; i += 3)
@@ -89,17 +75,14 @@ export default class Road
             // World Z position
             const worldZ = this.mesh.position.z + localZ
             
-            // Calculate road center for this Z position
-            const roadCenterX = this.getRoadCenterX(worldZ)
-            
-            // World X position (road center + local offset)
-            const worldX = roadCenterX + localX
+            // World X position
+            const worldX = localX
 
             // Get terrain height at this position
             const terrainHeight = this.chunks.getElevationForPosition(worldX, worldZ)
 
-            // Update X position to follow curve
-            positions[i] = roadCenterX + localX
+            // Update X position to stay straight at X=0
+            positions[i] = localX
             
             // Set road height slightly above terrain
             if (terrainHeight !== null) {
