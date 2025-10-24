@@ -11,9 +11,9 @@ export default class Chunks
         this.state = State.getInstance()
 
         this.minSize = 64
-        this.maxDepth = 4
+        this.maxDepth = 5  // Increased from 4 for more LOD levels
         this.maxSize = this.minSize * Math.pow(2, this.maxDepth)
-        this.splitRatioPerSize = 1.3
+        this.splitRatioPerSize = 1.8  // Increased from 1.3 for extended render distance
         this.lastId = 0
         
         this.events = new EventsEmitter()
