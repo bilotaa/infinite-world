@@ -49,6 +49,22 @@ export default class Controls
                 name: 'strafeLeft'
             },
             {
+                codes: [ 'ShiftLeft', 'ShiftRight' ],
+                name: 'boost'
+            },
+            {
+                codes: [ 'KeyC' ],
+                name: 'cameraMode'
+            },
+            {
+                codes: [ 'KeyP' ],
+                name: 'pointerLock'
+            },
+            {
+                codes: [ 'KeyH' ],
+                name: 'debug'
+            },
+            {
                 codes: [ 'KeyF' ],
                 name: 'fullscreen'
             },

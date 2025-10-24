@@ -167,8 +167,8 @@ export default class Player
         )
         
         // ============= UPDATE HUD DISPLAY =============
-        if(this.speedElement) {
-            const speedKmH = playerState.getSpeedKmH()
+        if(this.speedElement && playerState) {
+            const speedKmH = playerState.getSpeedKmH ? playerState.getSpeedKmH() : 0
             this.speedElement.textContent = speedKmH
             
             // Color change based on speed
@@ -181,17 +181,17 @@ export default class Player
             }
         }
         
-        if(this.gearElement) {
+        if(this.gearElement && playerState) {
             const gear = playerState.currentGear || 1
             this.gearElement.textContent = gear === 0 ? 'R' : gear
         }
         
-        if(this.turboElement) {
+        if(this.turboElement && playerState) {
             const turboPercent = ((playerState.turboCharge || 0) * 100).toFixed(0)
             this.turboElement.style.width = turboPercent + '%'
         }
         
-        if(this.rpmElement) {
+        if(this.rpmElement && playerState) {
             const rpm = Math.round(playerState.engineRPM || 1000)
             this.rpmElement.textContent = rpm + ' RPM'
         }
@@ -231,17 +231,21 @@ export default class Player
             const turboCharge = playerState.turboCharge || 0
             
             if(turboActive && turboCharge > 0.3) {
-                // Body glow during turbo
-                this.bodyMaterial.emissiveIntensity = 0.3 + turboCharge * 0.4
-                this.bodyMaterial.emissive.setHex(0x6666ff + Math.floor(turboCharge * 0x4400))
+                // Body glow during turbo (only if bodyMaterial exists)
+                if (this.bodyMaterial) {
+                    this.bodyMaterial.emissiveIntensity = 0.3 + turboCharge * 0.4
+                    this.bodyMaterial.emissive.setHex(0x6666ff + Math.floor(turboCharge * 0x4400))
+                }
                 
                 // Exhaust flames
                 this.exhaustMaterial.emissiveIntensity = turboCharge * 3
                 this.exhaustMaterial.opacity = turboCharge * 0.8
             } else {
                 // Normal state
-                this.bodyMaterial.emissiveIntensity = 0.3
-                this.bodyMaterial.emissive.setHex(0x666666)
+                if (this.bodyMaterial) {
+                    this.bodyMaterial.emissiveIntensity = 0.3
+                    this.bodyMaterial.emissive.setHex(0x666666)
+                }
                 this.exhaustMaterial.emissiveIntensity *= 0.9
                 this.exhaustMaterial.opacity *= 0.9
             }

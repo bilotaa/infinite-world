@@ -22,15 +22,20 @@ export default class Game
         this.username = options.username || 'Player'
         this.selectedCar = options.carId || 'cybertruck'
 
+        // Create game DOM element for renderer attachment
+        this.domElement = document.querySelector('.game') || document.body
+
         this.seed = 'p'
         this.debug = new Debug()
         this.state = new State({ username: this.username, carId: this.selectedCar })
         this.view = new View()
         
-        window.addEventListener('resize', () =>
+        // Store resize handler for cleanup
+        this.resizeHandler = () =>
         {
             this.resize()
-        })
+        }
+        window.addEventListener('resize', this.resizeHandler)
 
         this.update()
     }
@@ -54,6 +59,17 @@ export default class Game
 
     destroy()
     {
+        // Clean up event listeners to prevent memory leaks
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler)
+        }
         
+        // Clean up state and view
+        if (this.state && this.state.destroy) {
+            this.state.destroy()
+        }
+        if (this.view && this.view.destroy) {
+            this.view.destroy()
+        }
     }
 }

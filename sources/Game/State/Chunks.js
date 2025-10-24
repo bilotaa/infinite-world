@@ -65,7 +65,7 @@ export default class Chunks
     {
         // Check only if player coordinates changed to to another minimal chunk
         const player = this.state.player
-        const playerChunkKey = `${Math.round(player.position.current[0] / this.minSize * 2 + 0.5)}${Math.round(player.position.current[2] / this.minSize * 2 + 0.5)}`
+        const playerChunkKey = `${Math.round(player.position.current[0] / this.minSize * 2)}${Math.round(player.position.current[2] / this.minSize * 2)}`
 
         if(playerChunkKey !== this.playerChunkKey)
         {

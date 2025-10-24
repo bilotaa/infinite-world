@@ -61,5 +61,21 @@ export default class View
 
     destroy()
     {
+        // Clean up all view components to free memory
+        if (this.renderer) this.renderer.destroy()
+        if (this.grass && this.grass.destroy) this.grass.destroy()
+        if (this.player && this.player.destroy) this.player.destroy()
+        if (this.chunks && this.chunks.destroy) this.chunks.destroy()
+        if (this.terrains && this.terrains.destroy) this.terrains.destroy()
+        if (this.water && this.water.destroy) this.water.destroy()
+        if (this.sky && this.sky.destroy) this.sky.destroy()
+        if (this.noises && this.noises.destroy) this.noises.destroy()
+        
+        // Clear scene
+        if (this.scene) {
+            while(this.scene.children.length > 0) {
+                this.scene.remove(this.scene.children[0])
+            }
+        }
     }
 }

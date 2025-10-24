@@ -117,11 +117,14 @@ void main()
     // Tipness
     float tipness = step(2.0, mod(float(gl_VertexID) + 1.0, 3.0));
 
-    // Wind
+    // Wind - NOW WORKS AT ALL DISTANCES (removed scale multiplier)
     vec2 noiseUv = modelPosition.xz * 0.02 + uTime * 0.05;
     vec4 noiseColor = texture2D(uNoiseTexture, noiseUv);
-    modelPosition.x += (noiseColor.x - 0.5) * tipness * scale;
-    modelPosition.z += (noiseColor.y - 0.5) * tipness * scale;
+    
+    // Wind strength independent of distance - grass always moves beautifully
+    float windStrength = 0.4;
+    modelPosition.x += (noiseColor.x - 0.5) * tipness * windStrength;
+    modelPosition.z += (noiseColor.y - 0.5) * tipness * windStrength;
 
     // Final position
     vec4 viewPosition = viewMatrix * modelPosition;
@@ -132,11 +135,63 @@ void main()
     vec3 worldNormal = normalize(mat3(modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz) * normal);
     vec3 viewNormal = normalize(normalMatrix * normal);
 
-    // Grass color
-    vec3 uGrassDefaultColor = vec3(0.52, 0.65, 0.26);
-    vec3 uGrassShadedColor = vec3(0.52 / 1.3, 0.65 / 1.3, 0.26 / 1.3);
-    vec3 lowColor = mix(uGrassShadedColor, uGrassDefaultColor, 1.0 - scale); // Match the terrain
-    vec3 color = mix(lowColor, uGrassDefaultColor, tipness);
+    // ============= REALISTIC GRASS COLORS (7 variations) =============
+    // Base grass color palette (realistic natural grass hues)
+    vec3 grassBrightGreen = vec3(0.45, 0.68, 0.22);      // Bright spring green
+    vec3 grassMediumGreen = vec3(0.38, 0.62, 0.20);      // Medium healthy green
+    vec3 grassDarkGreen = vec3(0.28, 0.52, 0.16);        // Deep forest green
+    vec3 grassOliveGreen = vec3(0.42, 0.58, 0.25);       // Olive tint
+    vec3 grassYellowGreen = vec3(0.52, 0.65, 0.28);      // Yellow-green mix
+    vec3 grassLimeGreen = vec3(0.48, 0.70, 0.24);        // Lime accent
+    vec3 grassSageGreen = vec3(0.40, 0.56, 0.30);        // Sage/grey green
+    
+    // Per-blade color variation using noise texture
+    vec2 colorNoiseUv = modelCenter.xz * 0.1;
+    vec4 colorNoise = texture2D(uNoiseTexture, colorNoiseUv);
+    
+    // Select base color based on noise value (7 variations)
+    vec3 baseGrassColor;
+    float colorSelector = colorNoise.r * 7.0;
+    
+    if (colorSelector < 1.0) {
+        baseGrassColor = mix(grassMediumGreen, grassBrightGreen, fract(colorSelector));
+    } else if (colorSelector < 2.0) {
+        baseGrassColor = mix(grassBrightGreen, grassYellowGreen, fract(colorSelector));
+    } else if (colorSelector < 3.0) {
+        baseGrassColor = mix(grassYellowGreen, grassLimeGreen, fract(colorSelector));
+    } else if (colorSelector < 4.0) {
+        baseGrassColor = mix(grassLimeGreen, grassOliveGreen, fract(colorSelector));
+    } else if (colorSelector < 5.0) {
+        baseGrassColor = mix(grassOliveGreen, grassDarkGreen, fract(colorSelector));
+    } else if (colorSelector < 6.0) {
+        baseGrassColor = mix(grassDarkGreen, grassSageGreen, fract(colorSelector));
+    } else {
+        baseGrassColor = mix(grassSageGreen, grassMediumGreen, fract(colorSelector));
+    }
+    
+    // Add subtle per-blade random tint variation
+    vec3 colorVariation = vec3(
+        colorNoise.g * 0.08 - 0.04,  // Red variation
+        colorNoise.b * 0.06 - 0.03,  // Green variation  
+        colorNoise.a * 0.05 - 0.025  // Blue variation
+    );
+    baseGrassColor += colorVariation;
+    
+    // Darker base, lighter tips (natural grass gradient)
+    vec3 baseColor = baseGrassColor * 0.75;  // Darker at base
+    vec3 tipColor = baseGrassColor * 1.15;   // Lighter at tip
+    
+    // Add slight yellowing to some tips (natural look)
+    if (colorNoise.r > 0.7) {
+        tipColor += vec3(0.12, 0.10, -0.05);  // Yellow tint on some tips
+    }
+    
+    // Shaded version for distance fade
+    vec3 grassShadedColor = baseGrassColor * 0.65;
+    vec3 lowColor = mix(grassShadedColor, baseGrassColor, 1.0 - scale);
+    
+    // Blend from base to tip based on height
+    vec3 color = mix(lowColor, tipColor, tipness);
 
     // Sun shade
     float sunShade = getSunShade(normal);
