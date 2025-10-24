@@ -28,51 +28,6 @@ const vec3 GRASS_DRY = vec3(0.40, 0.48, 0.22);         // Dry grass
 const vec3 DIRT_RICH = vec3(0.35, 0.28, 0.20);         // Dark rich soil
 const vec3 DIRT_DRY = vec3(0.45, 0.38, 0.28);          // Dry dirt
 
-float smoothStep(float edge0, float edge1, float x) {
-    float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
-    return t * t * (3.0 - 2.0 * t);
-}
-
-float getRoadInfluence(float x) {
-    float distanceFromRoadCenter = abs(x - ROAD_CENTER_X);
-    float halfRoadWidth = ROAD_HALF_WIDTH;
-    float totalWidth = halfRoadWidth + ROAD_SMOOTH_WIDTH;
-
-    if (distanceFromRoadCenter < halfRoadWidth) {
-        return 1.0;
-    } else if (distanceFromRoadCenter < totalWidth) {
-        float blendDistance = distanceFromRoadCenter - halfRoadWidth;
-        float blendFactor = 1.0 - (blendDistance / ROAD_SMOOTH_WIDTH);
-        return smoothStep(0.0, 1.0, blendFactor);
-    }
-
-    return 0.0;
-}
-
-float getRoadLaneMarking(vec3 worldPos) {
-    float x = worldPos.x;
-    float z = worldPos.z;
-
-    float marking = 0.0;
-
-    float distFromCenter = abs(x);
-    float centerLineCheck = step(distFromCenter, CENTER_LINE_WIDTH * 0.5);
-
-    float dashCycle = DASH_LENGTH + DASH_GAP;
-    float zMod = mod(z, dashCycle);
-    float dashCheck = step(zMod, DASH_LENGTH);
-
-    marking = max(marking, centerLineCheck * dashCheck);
-
-    float distFromLeftEdge = abs(x + EDGE_LINE_POSITION);
-    marking = max(marking, step(distFromLeftEdge, EDGE_LINE_WIDTH * 0.5));
-
-    float distFromRightEdge = abs(x - EDGE_LINE_POSITION);
-    marking = max(marking, step(distFromRightEdge, EDGE_LINE_WIDTH * 0.5));
-
-    return marking;
-}
-
 void main()
 {
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
